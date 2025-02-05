@@ -12,7 +12,7 @@ function getWebflowStory(slug) {
 const store = {};
 window.store = store;
 
-
+const CURRENCY = "€";
 
 function onboardingHook({steps, currrent, index}) {
   console.log({ currrentStep: currrent, index });
@@ -30,6 +30,8 @@ function onboardingHook({steps, currrent, index}) {
     populateSummary();
   } else if (index === 4) {
     populateContraindications();
+  } else if (index === 5) {
+    populateCheckout();
   }
 }
 
@@ -253,9 +255,9 @@ function fillSummaryStepData() {
   const price = document.querySelector("#price");
 
   if (window.store.selectedCourses.length === 1) {
-    price.innerHTML = window.store.pricing.singleCoursePrice + "€";
+    price.innerHTML = window.store.pricing.singleCoursePrice + CURRENCY;
   } else if (window.store.selectedCourses.length === 2) {
-    price.innerHTML = window.store.pricing.twoCoursesPrice + "€";
+    price.innerHTML = window.store.pricing.twoCoursesPrice + CURRENCY;
   }
 
   const coursesCountElement = document.querySelector("#coursesCount");
@@ -277,6 +279,7 @@ function populateContraindications() {
   });
 }
 
+
 function renderContraindicationItem(slug, name, contraindications) {
   const template = document.createElement("template");
   template.innerHTML = `
@@ -290,7 +293,44 @@ function renderContraindicationItem(slug, name, contraindications) {
 }
 
 
+function populateCheckout() {
+  const container = document.querySelector("#productList");
+  const totalContainer = document.querySelector("#priceTotal");
+  const filteredCourses = window.store.courses.filter((course) =>
+    window.store.selectedCourses.includes(course.slug)
+  );
+
+  const priceOld = filteredCourses.length === 2 ? Number(window.store.pricing.singleCoursePrice) : "";
+  const priceNew = filteredCourses.length === 2 ? Number(window.store.pricing.twoCoursesPrice) / 2 : window.store.pricing.singleCoursePrice; 
+
+  filteredCourses.forEach((course) => {
+    const item = renderCheckoutCourseItem( "https://cdn.prod.website-files.com/676e8e3a573b707f2be07685/677d7fc464ea793a4794a3a2_image%20112.webp", course.name, course.description, String(priceOld)+CURRENCY, priceNew, course.slug, course.course_color);
+    container.appendChild(item);
+  });
+  totalContainer.innerHTML = (Number(priceNew)*filteredCourses.length).toFixed(2)+CURRENCY;
+}
 
 
+function renderCheckoutCourseItem(imageSrc, title, description, priceOld, priceNew, badgeText, badgeColor) {
+  const template = document.createElement("template");
+  template.innerHTML = `
+    <div class="card_product">
+      <img src="${imageSrc}" loading="lazy" sizes="100vw" alt="" class="card_product_img">
+      <div class="card_product_content u-vflex-stretch-top u-gap-4">
+        <div class="card_product_top">
+          <h4 class="product_name">${title}</h4>
+          <div class="card_product_price">
+            <div class="price_text_new">${priceNew}${CURRENCY}</div>
+            <div class="price_text_full text-decoration-strikethrough">${priceOld}</div>
+          </div>
+        </div>
+        <div class="product_description">${description}</div>
+        <div class="badge is-border u-align-self-start">
+          <div class="badge_text_small" style="color: ${badgeColor}">${badgeText}</div>
+        </div>
+      </div>
+    </div>`;
 
+  return template.content.firstElementChild;
+}
 
