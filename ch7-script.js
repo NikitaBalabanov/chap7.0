@@ -76,6 +76,10 @@ async function fetchHealthProviders() {
 
 function populateDropdown(providers) {
   const dropdown = document.querySelector("#healthProviders");
+  
+  // Set disabled state initially
+  dropdown.disabled = true;
+  
   dropdown.innerHTML = `<option value="">Bitte Krankenkasse wählen</option>`; // Default option
 
   providers.forEach((provider) => {
@@ -93,6 +97,9 @@ function populateDropdown(providers) {
       window.store.healthProviders[selectedProvider].takeover;
   }
 
+  // Enable dropdown after populating options
+  dropdown.disabled = false;
+  
   dropdown.addEventListener("change", handleDropdownChange);
 }
 
