@@ -3,6 +3,11 @@ function getDocumentFromFireBase(document) {
   return `${API}/getConfigData?document=${document}`;
 }
 
+function getCreateUserBaseUrl() {
+  // eslint-disable-next-line no-undef
+  return `${API}/createUser`;
+}
+
 
 function getWebflowStory(slug) {
   // eslint-disable-next-line no-undef
@@ -13,6 +18,22 @@ const store = {};
 window.store = store;
 
 const CURRENCY = "€";
+
+function initializeFormListeners() {
+  const form = document.getElementById('registerForm');
+  const submitButton = document.getElementById('registerFormSubmitButton');
+  
+  // Remove existing event listeners if any
+  if (form) {
+    form.removeEventListener('submit', handleFormSubmission);
+    form.addEventListener('submit', handleFormSubmission);
+  }
+  
+  if (submitButton) {
+    submitButton.removeEventListener('click', handleFormSubmission);
+    submitButton.addEventListener('click', handleFormSubmission);
+  }
+}
 
 function onboardingHook({steps, currrent, index}) {
   console.log({ currrentStep: currrent, index });
@@ -31,6 +52,7 @@ function onboardingHook({steps, currrent, index}) {
   } else if (index === 4) {
     populateContraindications();
   } else if (index === 5) {
+    initializeFormListeners(); // Initialize form listeners in step 5
     populateCheckout();
   }
 }
@@ -333,4 +355,177 @@ function renderCheckoutCourseItem(imageSrc, title, description, priceOld, priceN
 
   return template.content.firstElementChild;
 }
+
+
+// Add this new function to handle form submission
+function handleFormSubmission(event) {
+  event.preventDefault();
+  
+  const form = document.getElementById('registerForm');
+  const submitButton = document.getElementById('registerFormSubmitButton');
+  
+  // Disable submit button to prevent double submission
+  submitButton.disabled = true;
+  
+  // Get and validate form data
+  const isValid = getFormData();
+  
+  if (!isValid) {
+    submitButton.disabled = false;
+    return;
+  }
+  
+  // Call createUser with the form data from store
+  createUser(window.store.formData)
+    .catch(error => {
+      console.error('Error creating user:', error);
+      // Handle error (show error message to user)
+    })
+    .finally(() => {
+      submitButton.disabled = false;
+    });
+}
+
+// Add this function to create the user
+async function createUser(userData) {
+  try {
+    // Format the courses data
+    const paidCourses = window.store.selectedCourses.map(course => {
+      const validTill = new Date();
+      validTill.setFullYear(validTill.getFullYear() + 1);
+      
+      return {
+        course: course.toUpperCase(),
+        status: "valid",
+        validTill: validTill.toISOString().split('T')[0]
+      };
+    });
+
+    // Get health provider data
+    const healthProviderData = window.store.healthProviders[window.store.selectedHealtProvider];
+
+    // Check if user has any contraindications for their selected courses
+    const hasContraindications = getFilteredContraindications().length > 0;
+
+    const payload = {
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      password: userData.password,
+      dateOfBirth: userData.dateOfBirth,
+      namePrefix: userData.namePrefix,
+      hasPreconditions: hasContraindications,
+      healthProvider: {
+        maxCoursePrice: healthProviderData.maxCoursePrice || "",
+        name: window.store.selectedHealtProvider,
+        numberOfCourses: window.store.selectedCourses.length.toString(),
+        takeover: healthProviderData.takeover || ""
+      },
+      paidCourses: paidCourses,
+      selectedCourses: window.store.selectedCourses.map(course => course.toUpperCase()),
+      onboarding: {
+        answers: {
+          step1: window.store.selectedCourses.map(course => course.toUpperCase()),
+          step2: window.store.onboardingSurveyAnswers || [],
+        }
+      }
+    };
+
+    const response = await fetch(getCreateUserBaseUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create user');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error creating user:', error);
+    throw error;
+  }
+}
+
+
+function getFormData() {
+  const form = document.getElementById('registerForm');
+  const formData = {};
+  let isValid = true;
+
+  // Get form fields
+  const fields = {
+    firstName: form.querySelector('input[name="firstName"]'),
+    lastName: form.querySelector('input[name="lastName"]'),
+    email: form.querySelector('input[name="email"]'),
+    phone: form.querySelector('input[name="phone"]'),
+    street: form.querySelector('input[name="street"]'),
+    houseNumber: form.querySelector('input[name="houseNumber"]'),
+    zipCode: form.querySelector('input[name="zipCode"]'),
+    city: form.querySelector('input[name="city"]')
+  };
+
+  // Clear previous error states
+  Object.values(fields).forEach(field => {
+    if (field) {
+      field.classList.remove('error');
+    }
+  });
+
+  // Validate and collect data
+  Object.entries(fields).forEach(([key, field]) => {
+    if (!field) {
+      console.error(`Field ${key} not found`);
+      isValid = false;
+      return;
+    }
+
+    const value = field.value.trim();
+    formData[key] = value;
+
+    if (!value) {
+      field.classList.add('error');
+      isValid = false;
+    }
+
+    // Email validation
+    if (key === 'email' && value) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        field.classList.add('error');
+        isValid = false;
+      }
+    }
+
+    // Phone validation (optional field)
+    if (key === 'phone' && value) {
+      const phoneRegex = /^[+\d\s-()]{6,}$/;
+      if (!phoneRegex.test(value)) {
+        field.classList.add('error');
+        isValid = false;
+      }
+    }
+
+    // Zip code validation
+    if (key === 'zipCode' && value) {
+      const zipRegex = /^\d{4,5}$/;
+      if (!zipRegex.test(value)) {
+        field.classList.add('error');
+        isValid = false;
+      }
+    }
+  });
+
+  if (isValid) {
+    window.store.formData = formData;
+  }
+
+  return isValid;
+}
+
 
