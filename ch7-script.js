@@ -454,7 +454,7 @@ async function createUser() {
     const data = await response.json();
     
     window.store.createUserResponse = data;
-    window.store.userId = data.status;
+    window.store.userId = data.userId;
     if (!response.ok) {
       window.store.createUserResponse = data
       throw new Error(data.message || 'Failed to create user');
