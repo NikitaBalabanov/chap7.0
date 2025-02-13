@@ -211,7 +211,6 @@ async function populateOnboardingSurvey() {
   const data = await res.json();
   const surveyData =
     data?.story?.content?.onboarding_survey_steps?.[1]?.answers;
-  console.log(surveyData, selectedCourses);
   if (surveyData.length) {
     window.store.onboardingSurvey = surveyData;
     const container = document.querySelector("#onboardingSurvey");
@@ -441,7 +440,8 @@ async function createUser() {
       }
     };
 
-    console.log(payload);
+    
+    window.store.createUserPayload = payload;
     
     const response = await fetch(getCreateUserBaseUrl(), {
       method: 'POST',
@@ -452,7 +452,7 @@ async function createUser() {
     });
 
     const data = await response.json();
-    console.log(response, data);
+    
     window.store.createUserResponse = data;
     window.store.userId = data.status;
     if (!response.ok) {
@@ -472,7 +472,6 @@ async function createUser() {
 function populateNamePrefix() {
   const namePrefixSelect = document.getElementById('namePrefix');
   const prefixes = ['Mr.', 'Mrs.'];
-  console.log(namePrefixSelect, prefixes);
   // Clear existing options except the first placeholder
   while (namePrefixSelect.options.length > 1) {
     namePrefixSelect.remove(1);
