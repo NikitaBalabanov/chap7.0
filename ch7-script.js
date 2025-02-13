@@ -20,7 +20,7 @@ window.store = store;
 const CURRENCY = "€";
 
 function initializeFormListeners() {
-  const form = document.getElementById('registerForm');
+  const form = document.getElementById('signUpForm');
   const submitButton = document.getElementById('registerFormSubmitButton');
   
   // Remove existing event listeners if any
@@ -52,6 +52,7 @@ function onboardingHook({steps, currrent, index}) {
   } else if (index === 4) {
     populateContraindications();
   } else if (index === 5) {
+    populateNamePrefix();
     initializeFormListeners(); // Initialize form listeners in step 5
     populateCheckout();
   }
@@ -368,7 +369,7 @@ function renderCheckoutCourseItem(imageSrc, title, description, priceOld, priceN
 function handleFormSubmission(event) {
   event.preventDefault();
   
-  const form = document.getElementById('registerForm');
+
   const submitButton = document.getElementById('registerFormSubmitButton');
   
   // Disable submit button to prevent double submission
@@ -381,7 +382,8 @@ function handleFormSubmission(event) {
     submitButton.disabled = false;
     return;
   }
-  
+  console.log(window.store.formData);
+  return;
   // Call createUser with the form data from store
   createUser(window.store.formData)
     .catch(error => {
@@ -460,8 +462,26 @@ async function createUser(userData) {
 }
 
 
+function populateNamePrefix() {
+  const namePrefixSelect = document.getElementById('namePrefix');
+  const prefixes = ['Mr.', 'Mrs.'];
+  console.log(namePrefixSelect, prefixes);
+  // Clear existing options except the first placeholder
+  while (namePrefixSelect.options.length > 1) {
+    namePrefixSelect.remove(1);
+  }
+
+  // Add new options
+  prefixes.forEach(prefix => {
+    const option = document.createElement('option');
+    option.value = prefix;
+    option.textContent = prefix;
+    namePrefixSelect.appendChild(option);
+  });
+}
+
 function getFormData() {
-  const form = document.getElementById('registerForm');
+  const form = document.getElementById('signUpForm');
   const formData = {};
   let isValid = true;
 
