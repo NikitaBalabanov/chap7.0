@@ -109,7 +109,7 @@ function populateDropdown(providers) {
   function handleDropdownChange(event) {
     const selectedProvider = event.target.value;
     dropdown.value = selectedProvider;
-    setToStorage('selectedHealtProvider', selectedProvider);
+    setToStorage('selectedHealthProvider', selectedProvider);
     const healthProviders = getFromStorage('healthProviders', {});
     document.querySelector("#takeover").innerHTML = healthProviders[selectedProvider].takeover;
   }
@@ -295,10 +295,10 @@ function populateSummary() {
 
 function fillSummaryStepData() {
   const takeoverSummary = document.querySelector("#takeoverSummary");
-  const selectedHealtProvider = getFromStorage('selectedHealtProvider', '');
+  const selectedHealthProvider = getFromStorage('selectedHealthProvider', '');
   const healthProviders = getFromStorage('healthProviders', {});
   takeoverSummary.innerHTML =
-    healthProviders[selectedHealtProvider].takeover;
+    healthProviders[selectedHealthProvider].takeover;
 
   const price = document.querySelector("#price");
 
@@ -438,7 +438,7 @@ async function createUser() {
   try {
     const userData = getFromStorage('userData', {});
     const selectedCourses = getFromStorage('selectedCourses', []);
-    const selectedHealtProvider = getFromStorage('selectedHealtProvider', '');
+    const selectedHealthProvider = getFromStorage('selectedHealthProvider', '');
     const healthProviders = getFromStorage('healthProviders', {});
     const onboardingSurveyAnswers = getFromStorage('onboardingSurveyAnswers', []);
 
@@ -455,7 +455,7 @@ async function createUser() {
     });
 
     // Get health provider data
-    const healthProviderData = healthProviders[selectedHealtProvider];
+    const healthProviderData = healthProviders[selectedHealthProvider];
 
     // Check if user has any contraindications for their selected courses
     const hasContraindications = getFilteredContraindications().length > 0;
@@ -470,7 +470,7 @@ async function createUser() {
       hasPreconditions: hasContraindications,
       healthProvider: {
         maxCoursePrice: healthProviderData.maxCoursePrice || "",
-        name: selectedHealtProvider,
+        name: selectedHealthProvider,
         numberOfCourses: selectedCourses.length.toString(),
         takeover: healthProviderData.takeover || ""
       },
