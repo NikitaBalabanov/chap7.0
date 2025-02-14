@@ -678,6 +678,8 @@ document.addEventListener("DOMContentLoaded", function () {
           dateOfBirth: form.querySelector('input[name="dateOfBirth"]'),
           email: form.querySelector('input[name="email"]'),
           password: form.querySelector('input[name="password"]'),
+          consent1: form.querySelector('input[name="consent1"]'),
+          privacyPolicy: form.querySelector('input[name="privacyPolicy"]'),
         };
 
         const formData = {};
@@ -740,10 +742,30 @@ document.addEventListener("DOMContentLoaded", function () {
               errorMessages.push("You must be at least 18 years old");
             }
           }
+
+          if (key === "consent1" && value) {
+            if (!value.checked) {
+              field.classList.add("error");
+              valid = false;
+              errorMessages.push(
+                "Please agree to the consent before continuing."
+              );
+            }
+          }
+
+          if (key === "privacyPolicy" && value) {
+            if (!value.checked) {
+              field.classList.add("error");
+              valid = false;
+
+              errorMessages.push("Please agree to the privacy policy before continuing.");
+            }
+          }
         });
 
         if (valid) {
           setToStorage("userData", formData);
+          createUser();
         }
         break;
     }
