@@ -513,7 +513,7 @@ async function createUser() {
 
 
 function populateNamePrefix() {
-  const namePrefixSelect = document.getElementById('namePrefix');
+  const namePrefixSelect = document.querySelector('select[name="namePrefix"]');
   const prefixes = ['Mr.', 'Mrs.'];
   // Clear existing options except the first placeholder
   while (namePrefixSelect.options.length > 1) {
