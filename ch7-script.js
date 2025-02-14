@@ -480,7 +480,7 @@ async function doPayment(amount) {
         method: "POST",
         body: JSON.stringify({ 
           amount: amount * 100,
-          currency: 'eur' // Add currency
+          currency: 'eur'
         }),
         headers: {
           "Content-Type": "application/json",
@@ -490,19 +490,20 @@ async function doPayment(amount) {
 
     const data = await response.json();
     
+    // Log the full response to see its structure
+    console.log('Full Payment Intent Response:', data);
+
     if (!response.ok) {
       throw new Error(data.message || 'Failed to create payment intent');
     }
 
-    // Log the response to debug
-    console.log('Payment Intent Response:', data);
-
-    // Make sure we're getting the client secret
-    if (!data.clientSecret) {
+    // Check for client secret in different possible locations
+    const clientSecret = data.paymentIntent
+    
+    if (!clientSecret) {
+      console.error('Payment Intent Response Structure:', data);
       throw new Error('No client secret received from payment intent');
     }
-
-    const clientSecret = data.clientSecret;
 
     // Create payment element
     const elements = stripe.elements({
