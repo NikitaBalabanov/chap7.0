@@ -395,25 +395,33 @@ function populateCheckout() {
 }
 
 function renderCheckoutItem(title, badgeText, priceOld, priceNew) {
-  return `
-    <div class="card_product_top">
-        <div class="product_name">${title}</div>
-        <div class="card_product_price">
-            ${
-              badgeText
-                ? `<div class="badge is-rabatt"><div><span id="rabatt">${badgeText}</span> Rabatt</div></div>`
-                : ""
-            }
-            <div class="price_text_new">${priceNew}€</div>
-            ${
-              priceOld
-                ? `<div class="price_text_full text-decoration-strikethrough">${priceOld}€</div>`
-                : ""
-            }
+  const wrapper = document.createElement("div");
+  wrapper.className = "card_product is-default";
+
+  wrapper.innerHTML = `
+    <div class="card_product_content u-vflex-stretch-top u-gap-4">
+        <div class="card_product_top">
+            <div class="product_name">${title}</div>
+            <div class="card_product_price">
+                ${
+                  badgeText
+                    ? `<div id="rabatt" class="badge is-rabatt"><div><span>${badgeText}</span> Rabatt</div></div>`
+                    : ""
+                }
+                <div class="price_text_new">${priceNew}€</div>
+                ${
+                  priceOld
+                    ? `<div class="price_text_full text-decoration-strikethrough">${priceOld}€</div>`
+                    : ""
+                }
+            </div>
         </div>
     </div>
   `;
+
+  return wrapper;
 }
+
 
 function renderCheckoutCourseItem(
   imageSrc,
@@ -681,7 +689,7 @@ document.addEventListener("DOMContentLoaded", function () {
           consent1: form.querySelector('input[name="consent1"]'),
           privacyPolicy: form.querySelector('input[name="privacyPolicy"]'),
         };
-
+        console.log(fields);  
         const formData = {};
 
         // Clear previous error states
@@ -762,7 +770,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
           }
         });
-
+        console.log(valid);
         if (valid) {
           setToStorage("userData", formData);
           createUser();
