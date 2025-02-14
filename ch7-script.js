@@ -1,3 +1,6 @@
+const PUBLISHABLE_KEY =
+  "pk_live_51QPhSmIjMlCwpKLp1WUFFigtGme2DlhNm5Q92hVgaOXZ9LykdGitlL5TV4PyaMjO2rJcG2T22G5bdCYCis5KwnQs00AcDCV5VD";
+
 /* eslint-disable no-case-declarations */
 function getDocumentFromFireBase(document) {
   // eslint-disable-next-line no-undef
@@ -35,22 +38,6 @@ function setToStorage(key, value) {
 
 const CURRENCY = "€";
 
-function initializeFormListeners() {
-  const form = document.getElementById("signUpForm");
-  const submitButton = document.getElementById("registerFormSubmitButton");
-
-  // Remove existing event listeners if any
-  if (form) {
-    form.removeEventListener("submit", handleFormSubmission);
-    form.addEventListener("submit", handleFormSubmission);
-  }
-
-  if (submitButton) {
-    submitButton.removeEventListener("click", handleFormSubmission);
-    submitButton.addEventListener("click", handleFormSubmission);
-  }
-}
-
 function onboardingHook({ steps, currrent, index }) {
   console.log({ currrentStep: currrent, index });
   if (index === 0) {
@@ -69,7 +56,6 @@ function onboardingHook({ steps, currrent, index }) {
     populateContraindications();
   } else if (index === 5) {
     populateNamePrefix();
-    initializeFormListeners(); // Initialize form listeners in step 5
     populateCheckout();
   }
 }
@@ -423,7 +409,6 @@ function renderCheckoutItem(title, badgeText, priceOld, priceNew) {
   return wrapper;
 }
 
-
 function renderCheckoutCourseItem(
   imageSrc,
   title,
@@ -455,32 +440,40 @@ function renderCheckoutCourseItem(
   return template.content.firstElementChild;
 }
 
-// Add this new function to handle form submission
-function handleFormSubmission(event) {
-  event.preventDefault();
 
-  const submitButton = document.getElementById("registerFormSubmitButton");
-
-  // Disable submit button to prevent double submission
-  submitButton.disabled = true;
-
-  // Get and validate form data
-  const isValid = getFormData();
-
-  if (!isValid) {
-    submitButton.disabled = false;
-    return;
-  }
-
-  // Call createUser with the form data from store
-  createUser()
-    .catch((error) => {
-      console.error("Error creating user:", error);
-      // Handle error (show error message to user)
-    })
-    .finally(() => {
-      submitButton.disabled = false;
+async function doPayment(amount) {
+  try {
+    const userData = getFromStorage("userData", {});
+    const response = await fetch(
+      "https://us-central1-mind-c3055.cloudfunctions.net/createPaymentIntent",
+      { method: "POST", body: JSON.stringify({ amount: amount * 100 }) }
+    );
+    const { paymentIntent } = await response.json();
+    // eslint-disable-next-line no-undef
+    const stripe = Stripe(PUBLISHABLE_KEY);
+    await stripe.initPaymentSheet({
+      paymentIntentClientSecret: paymentIntent,
+      defaultBillingDetails: {
+        email: userData.email,
+        name: userData.firstName + " " + userData.lastName,
+        address: { country: "DE" }, // TODO: get country from userData
+      },
+      merchantDisplayName: "7 Mind Courses",
+      allowsDelayedPaymentMethods: false,
     });
+
+    // Show the Payment Sheet
+    const { error } = await stripe.presentPaymentSheet();
+    if (error) {
+      console.error("Payment failed:", error);
+      alert(`Payment failed: ${error.message}`);
+    } else {
+      alert("Payment successful!");
+    }
+  } catch (error) {
+    console.error("Error creating payment:", error);
+    throw error;
+  }
 }
 
 // Add this function to create the user
@@ -581,23 +574,6 @@ function populateNamePrefix() {
   });
 }
 
-function getFormData() {
-  const form = document.getElementById("signUpForm");
-  const formData = {};
-  let isValid = true;
-
-  // Get form fields
-  const fields = {
-    namePrefix: form.querySelector('select[name="namePrefix"]'),
-    firstName: form.querySelector('input[name="firstName"]'),
-    lastName: form.querySelector('input[name="lastName"]'),
-    dateOfBirth: form.querySelector('input[name="dateOfBirth"]'),
-    email: form.querySelector('input[name="email"]'),
-    password: form.querySelector('input[name="password"]'),
-  };
-
-  setToStorage("userData", formData);
-}
 
 document.addEventListener("DOMContentLoaded", function () {
   const steps = document.querySelectorAll(
@@ -632,7 +608,7 @@ document.addEventListener("DOMContentLoaded", function () {
     onboardingHook({ steps: steps, current: steps[index], index: index });
   }
 
-  function validateCurrentStep() {
+  async function validateCurrentStep() {
     let valid = true;
     let errorMessages = [];
 
@@ -690,7 +666,7 @@ document.addEventListener("DOMContentLoaded", function () {
           consent1: form.querySelector('input[name="consent1"]'),
           privacyPolicy: form.querySelector('input[name="privacyPolicy"]'),
         };
-        console.log(fields);  
+        console.log(fields);
         const formData = {};
 
         // Clear previous error states
@@ -767,14 +743,17 @@ document.addEventListener("DOMContentLoaded", function () {
               field.classList.add("error");
               valid = false;
 
-              errorMessages.push("Please agree to the privacy policy before continuing.");
+              errorMessages.push(
+                "Please agree to the privacy policy before continuing."
+              );
             }
           }
         });
-        console.log(valid);
+        
         if (valid) {
           setToStorage("userData", formData);
-          createUser();
+          await createUser();
+          await doPayment(100);
         }
         break;
     }
