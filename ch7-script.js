@@ -1,5 +1,5 @@
 const PUBLISHABLE_KEY =
-"pk_test_51QPhSmIjMlCwpKLpOSWig7J6FCQyFQ5NEysG3mXGy5tzXfZ61wwdGDSU2m6qPO8QwWeUMokteES3SyTUJlqJF6JP00zRyrYPId";
+  "pk_test_51QPhSmIjMlCwpKLpOSWig7J6FCQyFQ5NEysG3mXGy5tzXfZ61wwdGDSU2m6qPO8QwWeUMokteES3SyTUJlqJF6JP00zRyrYPId";
 
 let stripe; // Declare stripe variable at the top level
 
@@ -57,6 +57,11 @@ function onboardingHook({ steps, currrent, index }) {
   } else if (index === 4) {
     populateContraindications();
   } else if (index === 5) {
+    const form = document.getElementById("signUpForm");
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      return false;
+    });
     populateNamePrefix();
     populateCheckout();
   }
@@ -289,18 +294,10 @@ function fillSummaryStepData() {
   takeoverSummary.innerHTML = healthProviders[selectedHealthProvider].takeover;
 
   const price = document.querySelector("#price");
-
-  const selectedCourses = getFromStorage("selectedCourses", []);
-  if (selectedCourses.length === 1) {
-    const pricing = getFromStorage("pricing", {});
-    price.innerHTML = pricing.singleCoursePrice + CURRENCY;
-  } else if (selectedCourses.length === 2) {
-    const pricing = getFromStorage("pricing", {});
-    price.innerHTML = pricing.twoCoursesPrice + CURRENCY;
-  }
+  price.innerHTML = calculateTotalPrice() + CURRENCY;
 
   const coursesCountElement = document.querySelector("#coursesCount");
-  coursesCountElement.innerHTML = selectedCourses.length;
+  coursesCountElement.innerHTML = getFromStorage("selectedCourses", []).length;
 }
 
 function populateContraindications() {
@@ -341,46 +338,59 @@ function renderContraindicationItem(slug, name, contraindications) {
   return template.content.firstElementChild;
 }
 
+function calculateTotalPrice() {
+  const pricing = getFromStorage("pricing", {});
+  const selectedCourses = getFromStorage("selectedCourses", []);
+  
+  if (selectedCourses.length === 2) {
+    return Number(pricing.twoCoursesPrice);
+  } else if (selectedCourses.length === 1) {
+    return Number(pricing.singleCoursePrice);
+  }
+  return 0;
+}
+
+// Add this utility function near the other utility functions
+function calculateDiscountPercentage() {
+  const pricing = getFromStorage("pricing", {});
+  const selectedCourses = getFromStorage("selectedCourses", []);
+  
+  if (selectedCourses.length === 2) {
+    const regularPrice = Number(pricing.singleCoursePrice) * 2;
+    const discountedPrice = Number(pricing.twoCoursesPrice);
+    const discount = ((regularPrice - discountedPrice) / regularPrice) * 100;
+    return Math.round(discount); // Round to nearest integer
+  }
+  return 0;
+}
+
+// Update populateCheckout to use the new utility function
 function populateCheckout() {
   const container = document.querySelector("#productList");
   const totalContainer = document.querySelector("#priceTotal");
   const filteredCourses = getFromStorage("courses", []);
   const selectedCourses = getFromStorage("selectedCourses", []);
+  const pricing = getFromStorage("pricing", {});
 
-  const priceOld =
-    selectedCourses.length === 2
-      ? Number(getFromStorage("pricing", {}).singleCoursePrice)
-      : "";
-  const priceNew =
-    selectedCourses.length === 2
-      ? Number(getFromStorage("pricing", {}).twoCoursesPrice) / 2
-      : getFromStorage("pricing", {}).singleCoursePrice;
+  const discountPercentage = calculateDiscountPercentage();
+  const priceOld = selectedCourses.length === 2 ? Number(pricing.singleCoursePrice) : "";
+  const priceNew = selectedCourses.length === 2 
+    ? Number(pricing.twoCoursesPrice) / 2 
+    : Number(pricing.singleCoursePrice);
 
   filteredCourses.forEach((course) => {
     if (selectedCourses.includes(course.slug)) {
       const item = renderCheckoutItem(
         course.name,
-        selectedCourses.length === 2 ? "20%" : "",
+        discountPercentage ? `${discountPercentage}%` : "",
         priceOld,
         priceNew
       );
       container.appendChild(item);
-      /*
-      const item = renderCheckoutCourseItem(
-        "https://cdn.prod.website-files.com/676e8e3a573b707f2be07685/677d7fc464ea793a4794a3a2_image%20112.webp",
-        course.name,
-        course.description,
-        String(priceOld)+ priceOld ? CURRENCY : "",
-        priceNew,
-        course.slug,
-        course.course_color
-      );
-      container.appendChild(item);
-      */
     }
   });
-  totalContainer.innerHTML =
-    (Number(priceNew) * selectedCourses.length).toFixed(2) + CURRENCY;
+  
+  totalContainer.innerHTML = calculateTotalPrice().toFixed(2) + CURRENCY;
 }
 
 function renderCheckoutItem(title, badgeText, priceOld, priceNew) {
@@ -444,19 +454,19 @@ function renderCheckoutCourseItem(
 
 // Add this function to initialize Stripe
 async function initializeStripe() {
-  if (typeof Stripe === 'undefined') {
+  if (typeof Stripe === "undefined") {
     // Load Stripe.js if it hasn't been loaded
-    const script = document.createElement('script');
-    script.src = 'https://js.stripe.com/v3/';
+    const script = document.createElement("script");
+    script.src = "https://js.stripe.com/v3/";
     script.async = true;
     document.head.appendChild(script);
-    
+
     // Wait for script to load
     await new Promise((resolve) => {
       script.onload = resolve;
     });
   }
-  
+
   // Initialize Stripe with your publishable key
   // eslint-disable-next-line no-undef
   stripe = Stripe(PUBLISHABLE_KEY);
@@ -472,15 +482,15 @@ async function doPayment(amount) {
     }
 
     const userData = getFromStorage("userData", {});
-    
+
     // Create payment intent with proper error handling
     const response = await fetch(
       "https://us-central1-mind-c3055.cloudfunctions.net/createPaymentIntent",
       {
         method: "POST",
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           amount: amount * 100,
-          currency: 'eur'
+          currency: "eur",
         }),
         headers: {
           "Content-Type": "application/json",
@@ -489,98 +499,83 @@ async function doPayment(amount) {
     );
 
     const data = await response.json();
-    
-    // Log the full response to see its structure
-    console.log('Full Payment Intent Response:', data);
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to create payment intent');
+      throw new Error(data.message || "Failed to create payment intent");
     }
 
     // Check for client secret in different possible locations
-    const clientSecret = data.paymentIntent
-    
+    const clientSecret = data.paymentIntent;
+
     if (!clientSecret) {
-      console.error('Payment Intent Response Structure:', data);
-      throw new Error('No client secret received from payment intent');
+      console.error("Payment Intent Response Structure:", data);
+      throw new Error("No client secret received from payment intent");
     }
 
     // Create payment element
     const elements = stripe.elements({
       clientSecret,
       appearance: {
-        theme: 'stripe',
+        theme: "stripe",
         variables: {
-          colorPrimary: '#5469d4',
+          colorPrimary: "#5469d4",
         },
       },
     });
 
-    // Remove any existing payment forms
-    const existingForm = document.getElementById('payment-form');
-    if (existingForm) {
-      existingForm.remove();
-    }
+    // Create and mount the Payment Element
+    const paymentElement = elements.create("payment");
 
-    // Create container for Stripe Elements
-    const paymentContainer = document.createElement('div');
-    paymentContainer.id = 'payment-element';
+    // Remove any existing payment forms
+    const popupWrap = document.querySelector(".popup_wrap");
+    popupWrap.innerHTML = "";
+    popupWrap.parentElement.classList.add("active");
+    popupWrap.parentElement.style.display = "flex";
 
     // Create form for payment submission
-    const form = document.createElement('form');
-    form.id = 'payment-form';
-    
-    // Add a loading indicator
-    const loadingDiv = document.createElement('div');
-    loadingDiv.id = 'payment-loading';
-    loadingDiv.style.display = 'none';
-    loadingDiv.textContent = 'Processing payment...';
+    const form = document.createElement("form");
+    form.id = "payment-form";
 
-    // Add error message container
-    const errorDiv = document.createElement('div');
-    errorDiv.id = 'payment-error';
-    errorDiv.style.color = 'red';
-    errorDiv.style.marginBottom = '16px';
-    errorDiv.style.display = 'none';
+    // Create div for payment element
+    const paymentElementDiv = document.createElement("div");
+    paymentElementDiv.id = "payment-element";
+    form.appendChild(paymentElementDiv);
 
-    const submitButton = document.createElement('button');
-    submitButton.type = 'submit';
-    submitButton.textContent = 'Pay now';
-    submitButton.id = 'submit-payment';
-
-    form.appendChild(paymentContainer);
-    form.appendChild(errorDiv);
-    form.appendChild(loadingDiv);
+    // Create submit button
+    const submitButton = document.createElement("button");
+    submitButton.type = "submit";
+    submitButton.textContent = "Pay now";
+    submitButton.classList.add(
+      "btn",
+      "btn-primary",
+      "g_clickable_btn",
+      "btn_main_wrap"
+    );
+    submitButton.id = "submit-payment";
+    submitButton.style.marginTop = "20px";
     form.appendChild(submitButton);
 
-    // Find the appropriate container in your page
-    const checkoutContainer = document.querySelector('#checkout-container') || document.body;
-    checkoutContainer.appendChild(form);
+    popupWrap.appendChild(form);
 
-    // Create and mount the Payment Element
-    const paymentElement = elements.create('payment');
-    paymentElement.mount('#payment-element');
+    // Mount the Payment Element
+    paymentElement.mount("#payment-element");
 
     // Handle form submission
-    form.addEventListener('submit', async (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
-
-      // Disable the submit button and show loading
       submitButton.disabled = true;
-      loadingDiv.style.display = 'block';
-      errorDiv.style.display = 'none';
 
       try {
         const { error } = await stripe.confirmPayment({
           elements,
           confirmParams: {
-            return_url: window.location.href,
+            return_url: window.location.href + "/vielen-dank",
             payment_method_data: {
               billing_details: {
                 name: `${userData.firstName} ${userData.lastName}`,
                 email: userData.email,
                 address: {
-                  country: 'DE',
+                  country: "DE",
                 },
               },
             },
@@ -588,25 +583,21 @@ async function doPayment(amount) {
         });
 
         if (error) {
+          console.error("Payment failed:", error);
+          // Show error to customer
+          const errorDiv = document.createElement("div");
+          errorDiv.style.color = "red";
+          errorDiv.style.marginTop = "10px";
           errorDiv.textContent = error.message;
-          errorDiv.style.display = 'block';
-          console.error('Payment failed:', error);
-        } else {
-          console.log('Payment successful!');
-          // Handle successful payment
-          loadingDiv.textContent = 'Payment successful!';
-          loadingDiv.style.color = 'green';
+          form.appendChild(errorDiv);
         }
       } catch (error) {
-        console.error('Payment error:', error);
-        errorDiv.textContent = 'An unexpected error occurred. Please try again.';
-        errorDiv.style.display = 'block';
+        console.error("Payment error:", error);
       } finally {
+        window.location.href = "/vielen-dank";
         submitButton.disabled = false;
-        loadingDiv.style.display = 'none';
       }
     });
-
   } catch (error) {
     console.error("Error creating payment:", error);
     throw error;
@@ -701,7 +692,6 @@ function populateNamePrefix() {
   while (namePrefixSelect.options.length > 1) {
     namePrefixSelect.remove(1);
   }
-
   // Add new options
   prefixes.forEach((prefix) => {
     const option = document.createElement("option");
@@ -792,8 +782,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       case 5:
         const form = document.getElementById("signUpForm");
-      
-        
+       
         const fields = {
           namePrefix: form.querySelector('select[name="namePrefix"]'),
           firstName: form.querySelector('input[name="firstName"]'),
@@ -804,7 +793,7 @@ document.addEventListener("DOMContentLoaded", function () {
           consent1: form.querySelector('input[name="consent1"]'),
           privacyPolicy: form.querySelector('input[name="privacyPolicy"]'),
         };
-        
+
         const formData = {};
 
         // Clear previous error states
@@ -866,8 +855,8 @@ document.addEventListener("DOMContentLoaded", function () {
             }
           }
 
-          if (key === "consent1" && value) {
-            if (field.checked !== true) {
+          if (key === "consent1") {
+            if (!field.checked) {
               field.classList.add("error");
               valid = false;
               errorMessages.push(
@@ -876,22 +865,21 @@ document.addEventListener("DOMContentLoaded", function () {
             }
           }
 
-          if (key === "privacyPolicy" && value) {
-            if (field.checked !== true) {
+          if (key === "privacyPolicy") {
+            if (!field.checked) {
               field.classList.add("error");
               valid = false;
-
               errorMessages.push(
                 "Please agree to the privacy policy before continuing."
               );
             }
           }
         });
-
+        
         if (valid) {
           setToStorage("userData", formData);
           await createUser();
-          await doPayment(100);
+          await doPayment(calculateTotalPrice());
         }
         break;
     }
@@ -928,11 +916,12 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function handleNextClick(event) {
+    
     if (!validateCurrentStep()) {
       event.preventDefault();
       return;
     }
-    if (currentStep < steps.length - 1) {
+    if (currentStep < steps.length - 1) { 
       currentStep++;
       showStep(currentStep);
     }
@@ -979,13 +968,17 @@ document.addEventListener("DOMContentLoaded", function () {
   attachEventListeners();
   showStep(currentStep);
 
-  document.querySelector("form")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    return false;
-  }, true);
+  document.querySelector("form")?.addEventListener(
+    "submit",
+    (e) => {
+      e.preventDefault();
+      return false;
+    },
+    true
+  );
 
   // Add this near the top of your file
-  const paymentStyles = document.createElement('style');
+  const paymentStyles = document.createElement("style");
   paymentStyles.textContent = `
     #payment-form {
       width: 100%;
@@ -995,33 +988,9 @@ document.addEventListener("DOMContentLoaded", function () {
       border: 1px solid #ddd;
       border-radius: 4px;
     }
-
+    
     #payment-element {
       margin-bottom: 24px;
-    }
-
-    button {
-      background: #5469d4;
-      color: #ffffff;
-      border-radius: 4px;
-      border: 0;
-      padding: 12px 16px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      display: block;
-      transition: all 0.2s ease;
-      box-shadow: 0px 4px 5.5px 0px rgba(0, 0, 0, 0.07);
-      width: 100%;
-    }
-
-    button:hover {
-      filter: brightness(1.1);
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: default;
     }
   `;
   document.head.appendChild(paymentStyles);
