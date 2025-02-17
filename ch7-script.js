@@ -488,6 +488,7 @@ async function doPayment(amount) {
         body: JSON.stringify({
           amount: amount * 100,
           currency: "eur",
+          userId: getFromStorage("createUserResponse", {}).userId,
         }),
         headers: {
           "Content-Type": "application/json",
@@ -561,11 +562,12 @@ async function doPayment(amount) {
         const { error } = await stripe.confirmPayment({
           elements,
           confirmParams: {
-            return_url: window.location.href + "/vielen-dank",
+            return_url: window.location.href.replace("onboarding", "vielen-dank"),
             payment_method_data: {
               billing_details: {
                 name: `${userData.firstName} ${userData.lastName}`,
                 email: userData.email,
+                userId: getFromStorage("createUserResponse", {}).userId,
                 address: {
                   country: "DE",
                 },
@@ -586,7 +588,7 @@ async function doPayment(amount) {
       } catch (error) {
         console.error("Payment error:", error);
       } finally {
-        window.location.href = "/vielen-dank";
+        window.location.href = window.location.href.replace("onboarding", "vielen-dank");
         submitButton.disabled = false;
       }
     });
