@@ -871,17 +871,36 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!field) {
               console.error(`Field ${key} not found`);
               valid = false;
-              errorMessages.push(`${key} field is missing`);
+              errorMessages.push("Please fill in all required fields");
               return;
             }
 
             const value = field.value.trim();
             formData[key] = value;
 
-            if (!value) {
+            if (!value && !["consent1", "privacyPolicy"].includes(key)) {
               field.classList.add("error");
               valid = false;
-              errorMessages.push(`${key} is required`);
+              switch (key) {
+                case "namePrefix":
+                  errorMessages.push("Please select your title");
+                  break;
+                case "firstName":
+                  errorMessages.push("Please enter your first name");
+                  break;
+                case "lastName":
+                  errorMessages.push("Please enter your last name");
+                  break;
+                case "dateOfBirth":
+                  errorMessages.push("Please enter your date of birth");
+                  break;
+                case "email":
+                  errorMessages.push("Please enter your email address");
+                  break;
+                case "password":
+                  errorMessages.push("Please enter a password");
+                  break;
+              }
             }
 
             // Email validation
@@ -918,24 +937,16 @@ document.addEventListener("DOMContentLoaded", function () {
               }
             }
 
-            if (key === "consent1") {
-              if (!field.checked) {
-                field.classList.add("error");
-                valid = false;
-                errorMessages.push(
-                  "Please agree to the consent before continuing."
-                );
-              }
+            if (key === "consent1" && !field.checked) {
+              field.classList.add("error");
+              valid = false;
+              errorMessages.push("Please agree to the terms and conditions");
             }
 
-            if (key === "privacyPolicy") {
-              if (!field.checked) {
-                field.classList.add("error");
-                valid = false;
-                errorMessages.push(
-                  "Please agree to the privacy policy before continuing."
-                );
-              }
+            if (key === "privacyPolicy" && !field.checked) {
+              field.classList.add("error");
+              valid = false;
+              errorMessages.push("Please agree to the privacy policy");
             }
           });
           
