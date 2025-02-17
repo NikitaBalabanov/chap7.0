@@ -189,7 +189,6 @@ async function populateOnboardingSurveyStep1() {
         container.appendChild(item);
       });
   }
-
 }
 
 
@@ -223,11 +222,12 @@ function getSelectedCourses() {
     "#coursesContainer .card_select_checkbox:checked"
   );
 
-  const selectedCourses = Array.from(selectedCheckboxes).map((checkbox) =>
+  const answeredIds = Array.from(selectedCheckboxes).map((checkbox) =>
     checkbox.getAttribute("data-value")
   );
+  console.log({answeredIds});
   const onboardingSurvey = getFromStorage("onboardingSurvey", [])?.[0]?.answers;
-  setToStorage("onboardingSurveyAnswers_1", selectedCourses.map((id) => ({id, type: onboardingSurvey.find((item) => item.id === id).type})));
+  setToStorage("onboardingSurveyAnswers_1", answeredIds.map((id) => ({id, type: onboardingSurvey.find((item) => item.id === id)?.type})));
 }
 
 function renderOnboardingSurveyItem(id, type, text) {
