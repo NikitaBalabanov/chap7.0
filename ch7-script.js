@@ -45,14 +45,14 @@ function setToStorage(key, value) {
 function onboardingHook({ current, index }) {
   console.log({ current, index });
   if (index === 0) {
-    fetchHealthProviders();
     fetchPricing();
     fetchContraindications();
+    fetchOnboardingSurvey();
   } else if (index === 1) {
     populateCourses();
   } else if (index === 2) {
     getSelectedCourses();
-    populateOnboardingSurvey();
+    populateOnboardingSurveyStep2();
   } else if (index === 3) {
     getCheckedSurveyAnswers();
     populateSummary();
@@ -212,17 +212,23 @@ function renderOnboardingSurveyItem(id, type, text) {
   return template.content.firstElementChild;
 }
 
-async function populateOnboardingSurvey() {
+async function fetchOnboardingSurvey() {
   const res = await fetch(getWebflowStory("onboarding-survey"));
-  const selectedCourses = getFromStorage("selectedCourses", []);
   const data = await res.json();
-  const surveyData =
-    data?.story?.content?.onboarding_survey_steps?.[1]?.answers;
-  if (surveyData.length) {
-    setToStorage("onboardingSurvey", surveyData);
+  const onboardingSurvey = data?.story?.content?.onboarding_survey_steps;
+  if (data.success && onboardingSurvey) {
+    setToStorage("onboardingSurvey", onboardingSurvey);
+  }
+  return onboardingSurvey;
+}
+
+async function populateOnboardingSurveyStep2() {
+  const selectedCourses = getFromStorage("selectedCourses", []);
+  const onboardingSurvey = getFromStorage("onboardingSurvey", [])?.[1]?.answers;
+  if (onboardingSurvey.length) {
     const container = document.querySelector("#onboardingSurvey");
     container.innerHTML = "";
-    surveyData
+    onboardingSurvey
       .filter((item) => selectedCourses.includes(item.type))
       .forEach((data) => {
         const item = renderOnboardingSurveyItem(data.id, data.type, data.text);
@@ -944,7 +950,7 @@ document.addEventListener("DOMContentLoaded", function () {
       btn.addEventListener("click", handlePrevClick);
     });
   }
-
+  fetchHealthProviders();
   attachEventListeners();
   showStep(currentStep);
 });
