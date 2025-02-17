@@ -165,7 +165,7 @@ async function populateOnboardingSurveyStep1() {
     onboardingSurvey
       // .filter((item) => selectedCourses.includes(item.type))
       .forEach((data) => {
-        const item = renderCourseItem(data.id, data.type, data.text, data.text, data.image_cover.filename);
+        const item = renderCourseItem(data.id, data.type, data.text, data.image_cover.filename);
         container.appendChild(item);
       });
   }
