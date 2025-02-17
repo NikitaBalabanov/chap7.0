@@ -47,9 +47,10 @@ function onboardingHook({ current, index }) {
   if (index === 0) {
     fetchPricing();
     fetchContraindications();
+    fetchCourses();
     fetchOnboardingSurvey();
   } else if (index === 1) {
-    populateCourses();
+    populateOnboardingSurveyStep1();
   } else if (index === 2) {
     getSelectedCourses();
     populateOnboardingSurveyStep2();
@@ -165,7 +166,34 @@ async function populateCourses() {
   }
 }
 
-function renderCourseItem(value, text, imgSrc) {
+async function fetchCourses() {
+  const res = await fetch(getDocumentFromFireBase("courses"));
+  const data = await res.json();
+  if (data.success && data.data["courses-info"].length) {
+    setToStorage("courses", data.data["courses-info"]); 
+  }
+  return data.data["courses-info"];
+}
+
+async function populateOnboardingSurveyStep1() {
+  const selectedCourses = getFromStorage("selectedCourses", []);
+  const onboardingSurvey = getFromStorage("onboardingSurvey", [])?.[0]?.answers;
+
+  if (onboardingSurvey.length) {
+    const container = document.querySelector("#coursesContainer");
+    container.innerHTML = "";
+    onboardingSurvey
+      .filter((item) => selectedCourses.includes(item.type))
+      .forEach((data) => {
+        const item = renderCourseItem(data.id, data.type, data.text, data.text, data.image_cover.filename);
+        container.appendChild(item);
+      });
+  }
+
+}
+
+
+function renderCourseItem(id, value, text, imgSrc) {
   const template = document.createElement("template");
   template.innerHTML = `<label class="w-checkbox form_card_select">
           <div class="card_form_img_contain">
@@ -175,7 +203,7 @@ function renderCourseItem(value, text, imgSrc) {
                  alt="" 
                  class="card_select_img">
           </div>
-          <input type="checkbox" name="step1[]" data-name="step1[]" data-value="${value}" class="w-checkbox-input card_select_checkbox">
+          <input type="checkbox" data-id="${id}" name="step1[]" data-name="step1[]" data-value="${value}" class="w-checkbox-input card_select_checkbox">
           <span class="card_select_label w-form-label"><br></span>
           <div class="card_select_content u-hflex-left-top u-gap-3">
             <div class="form_checkbox_visible u-hflex-center-center">
@@ -950,7 +978,9 @@ document.addEventListener("DOMContentLoaded", function () {
       btn.addEventListener("click", handlePrevClick);
     });
   }
-  fetchHealthProviders();
+ 
   attachEventListeners();
   showStep(currentStep);
 });
+
+fetchHealthProviders();
