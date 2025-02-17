@@ -21,6 +21,7 @@ function getWebflowStory(slug) {
   return `${API}/getWebflowStory?slug=${slug}&draft=true`;
 }
 
+
 // Add these helper functions
 function getFromStorage(key, defaultValue = null) {
   try {
@@ -32,6 +33,7 @@ function getFromStorage(key, defaultValue = null) {
   }
 }
 
+
 function setToStorage(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
@@ -39,7 +41,6 @@ function setToStorage(key, value) {
     console.error(`Error writing ${key} to localStorage:`, e);
   }
 }
-
 
 
 function onboardingHook({ current, index }) {
@@ -65,6 +66,7 @@ function onboardingHook({ current, index }) {
   }
 }
 
+
 async function fetchHealthProviders() {
   try {
     const response = await fetch(getDocumentFromFireBase("healthProviders"));
@@ -80,6 +82,7 @@ async function fetchHealthProviders() {
     console.error("Error fetching health providers:", error);
   }
 }
+
 
 function populateDropdown(providers) {
   const dropdown = document.querySelector("#healthProviders");
@@ -112,6 +115,7 @@ function populateDropdown(providers) {
   dropdown.addEventListener("change", handleDropdownChange);
 }
 
+
 async function fetchPricing() {
   try {
     const res = await fetch(getDocumentFromFireBase("pricing"));
@@ -124,6 +128,7 @@ async function fetchPricing() {
     console.error(error);
   }
 }
+
 
 async function fetchContraindications() {
   try {
@@ -138,6 +143,7 @@ async function fetchContraindications() {
   }
 }
 
+
 function getFilteredContraindications() {
   const selectedCourses = getFromStorage("selectedCourses", []);
   const contraindications = getFromStorage("contraindications", []);
@@ -145,6 +151,7 @@ function getFilteredContraindications() {
     selectedCourses.includes(contraindication.course_slug)
   );
 }
+
 
 async function fetchCourses() {
   const res = await fetch(getDocumentFromFireBase("courses"));
@@ -154,6 +161,19 @@ async function fetchCourses() {
   }
   return data.data["courses-info"];
 }
+
+
+async function fetchOnboardingSurvey() {
+  const res = await fetch(getWebflowStory("onboarding-survey"));
+  const data = await res.json();
+  const onboardingSurvey = data?.story?.content?.onboarding_survey_steps;
+  console.log({onboardingSurvey});
+  if ( onboardingSurvey?.length) {
+    setToStorage("onboardingSurvey", onboardingSurvey);
+  }
+  return onboardingSurvey;
+}
+
 
 async function populateOnboardingSurveyStep1() {
   const selectedCourses = getFromStorage("selectedCourses", []);
@@ -206,7 +226,8 @@ function getSelectedCourses() {
   const selectedCourses = Array.from(selectedCheckboxes).map((checkbox) =>
     checkbox.getAttribute("data-value")
   );
-  setToStorage("selectedCourses", selectedCourses);
+  const onboardingSurvey = getFromStorage("onboardingSurvey", [])?.[0]?.answers;
+  setToStorage("onboardingSurveyAnswers_1", selectedCourses.map((id) => ({id, type: onboardingSurvey.find((item) => item.id === id).type})));
 }
 
 function renderOnboardingSurveyItem(id, type, text) {
@@ -220,16 +241,6 @@ function renderOnboardingSurveyItem(id, type, text) {
   return template.content.firstElementChild;
 }
 
-async function fetchOnboardingSurvey() {
-  const res = await fetch(getWebflowStory("onboarding-survey"));
-  const data = await res.json();
-  const onboardingSurvey = data?.story?.content?.onboarding_survey_steps;
-  console.log({onboardingSurvey});
-  if ( onboardingSurvey?.length) {
-    setToStorage("onboardingSurvey", onboardingSurvey);
-  }
-  return onboardingSurvey;
-}
 
 async function populateOnboardingSurveyStep2() {
   const onboardingSurvey = getFromStorage("onboardingSurvey", [])?.[1]?.answers;
@@ -253,7 +264,8 @@ function getCheckedSurveyAnswers() {
   const surveyAnswers = Array.from(selectedCheckboxes).map(
     (checkbox) => checkbox.id
   );
-  setToStorage("onboardingSurveyAnswers", surveyAnswers);
+  const onboardingSurvey = getFromStorage("onboardingSurvey", [])?.[1]?.answers;
+  setToStorage("onboardingSurveyAnswers_2", surveyAnswers.map((id) => ({id, type: onboardingSurvey.find((item) => item.id === id).type})));
 }
 
 function renderCardResult(imageSrc, title, text, color) {
