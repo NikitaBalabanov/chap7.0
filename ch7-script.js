@@ -16,7 +16,26 @@ const dictionary = {
   "error.requiredFields": "Bitte füllen Sie alle erforderlichen Felder aus",
   "error.healthProvider": "Bitte wählen Sie eine Krankenkasse aus",
   "error.selectOptions": "Bitte wählen Sie 1 oder 2 Optionen aus",
-  "error.agreeToTerms": "Bitte stimmen Sie beiden Bedingungen zu"
+  "error.agreeToTerms": "Bitte stimmen Sie beiden Bedingungen zu",
+
+  "select.healthProvider": "Bitte Krankenkasse wählen",
+  "select.namePrefix.mr": "Herr",
+  "select.namePrefix.mrs": "Frau",
+
+  "payment.processing": "Wird bearbeitet ...",
+  "payment.payNow": "Jetzt bezahlen",
+  "payment.discount": "Rabatt",
+
+  "button.next": "Weiter",
+  "button.back": "Zurück",
+  "button.submit": "Absenden",
+
+  "error.payment": "Zahlungsfehler aufgetreten",
+  "error.userCreation": "Fehler beim Erstellen des Benutzerkontos",
+  "error.validation": "Bitte überprüfen Sie Ihre Eingaben",
+  
+  "success.registration": "Registrierung erfolgreich",
+  "success.payment": "Zahlung erfolgreich"
 };
 
 const PUBLISHABLE_KEY =
@@ -109,7 +128,7 @@ function populateDropdown(providers) {
   // Set disabled state initially
   dropdown.disabled = true;
 
-  dropdown.innerHTML = `<option value="">Bitte Krankenkasse wählen</option>`; // Default option
+  dropdown.innerHTML = `<option value="">${dictionary["select.healthProvider"]}</option>`; // Default option
 
   providers.forEach((provider) => {
     const option = document.createElement("option");
@@ -496,7 +515,7 @@ function renderCheckoutItem(title, badgeText, priceOld, priceNew) {
             <div class="card_product_price">
                 ${
                   badgeText
-                    ? `<div class="badge is-rabatt"><div><span>${badgeText}</span> Rabatt</div></div>`
+                    ? `<div class="badge is-rabatt"><div><span>${badgeText}</span> ${dictionary["payment.discount"]}</div></div>`
                     : ""
                 }
                 <div class="price_text_new">${priceNew}€</div>
@@ -568,8 +587,9 @@ async function initializeStripe() {
 // Modify the doPayment function
 async function doPayment(amount) {
   try {
-    const registerButton = document.querySelector("#registerFormSubmitButton").querySelector(".btn_main_text");
-    registerButton.textContent = "Processing ....";
+    const registerButton = document.querySelector("#registerFormSubmitButton")
+      .querySelector(".btn_main_text");
+    registerButton.textContent = dictionary["payment.processing"];
     // Initialize Stripe if not already initialized
     if (!stripe) {
       await initializeStripe();
@@ -668,14 +688,13 @@ async function doPayment(amount) {
       } catch (error) {
         console.error("Payment error:", error);
       } finally {
-        registerButton.textContent = "Pay now";
+        registerButton.textContent = dictionary["payment.payNow"];
         // window.location.href = window.location.href.replace("onboarding", "vielen-dank");
         submitButton.disabled = false;
       }
     });
   } catch (error) {
-    
-    console.error("Error creating payment:", error);
+    console.error(dictionary["error.payment"], error);
     throw error;
   }
 }
@@ -767,16 +786,19 @@ async function createUser() {
 
 function populateNamePrefix() {
   const namePrefixSelect = document.querySelector('select[name="namePrefix"]');
-  const prefixes = ["Mr.", "Mrs."];
-  // Clear existing options except the first placeholder
+  const prefixes = [
+    { value: "Mr.", text: dictionary["select.namePrefix.mr"] },
+    { value: "Mrs.", text: dictionary["select.namePrefix.mrs"] }
+  ];
+  
   while (namePrefixSelect.options.length > 1) {
     namePrefixSelect.remove(1);
   }
-  // Add new options
+  
   prefixes.forEach((prefix) => {
     const option = document.createElement("option");
-    option.value = prefix;
-    option.textContent = prefix;
+    option.value = prefix.value;
+    option.textContent = prefix.text;
     namePrefixSelect.appendChild(option);
   });
 }
