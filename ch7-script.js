@@ -223,7 +223,7 @@ function getStep1Answers() {
   );
 
   const answeredIds = Array.from(selectedCheckboxes).map((checkbox) =>
-    checkbox.getAttribute("data-value")
+    checkbox.getAttribute("data-id")
   );
   console.log({answeredIds});
   const onboardingSurvey = getFromStorage("onboardingSurvey", [])?.[0]?.answers;
