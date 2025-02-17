@@ -1,21 +1,23 @@
+/* eslint-disable no-case-declarations */
+/* eslint-disable no-undef */
+
 const PUBLISHABLE_KEY =
   "pk_test_51QPhSmIjMlCwpKLpOSWig7J6FCQyFQ5NEysG3mXGy5tzXfZ61wwdGDSU2m6qPO8QwWeUMokteES3SyTUJlqJF6JP00zRyrYPId";
 
-let stripe; // Declare stripe variable at the top level
+let stripe; 
 
-/* eslint-disable no-case-declarations */
+const CURRENCY = "€";
+
+
 function getDocumentFromFireBase(document) {
-  // eslint-disable-next-line no-undef
   return `${API}/getConfigData?document=${document}`;
 }
 
 function getCreateUserBaseUrl() {
-  // eslint-disable-next-line no-undef
   return `${API}/createUser`;
 }
 
 function getWebflowStory(slug) {
-  // eslint-disable-next-line no-undef
   return `${API}/getWebflowStory?slug=${slug}&draft=true`;
 }
 
@@ -38,10 +40,10 @@ function setToStorage(key, value) {
   }
 }
 
-const CURRENCY = "€";
 
-function onboardingHook({ steps, currrent, index }) {
-  console.log({ currrentStep: currrent, index });
+
+function onboardingHook({ current, index }) {
+  console.log({ current, index });
   if (index === 0) {
     fetchHealthProviders();
     fetchPricing();
@@ -57,11 +59,6 @@ function onboardingHook({ steps, currrent, index }) {
   } else if (index === 4) {
     populateContraindications();
   } else if (index === 5) {
-    const form = document.getElementById("signUpForm");
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      return false;
-    });
     populateNamePrefix();
     populateCheckout();
   }
@@ -708,6 +705,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const prevBtns = document.querySelectorAll("[data-btn-prev]");
   const nextBtns = document.querySelectorAll("[data-btn-next]");
   const submitBtn = document.querySelector("[data-btn-submit]");
+  const errorMessageStep1 = document.getElementById("error_message_step1");
   const errorMessageStep2 = document.getElementById("error_message");
   const errorMessageStep3 = document.getElementById("error_message_step3");
   const errorMessageStep4 = document.getElementById("error_message_step4");
@@ -887,6 +885,10 @@ document.addEventListener("DOMContentLoaded", function () {
       // Show error messages if any
       if (!valid) {
         switch (currentStep) {
+          case 0:
+            errorMessageStep1.innerHTML = errorMessages.join("<br>");
+            errorMessageStep1.style.display = "block";
+            break;
           case 1:
             errorMessageStep2.innerHTML = errorMessages.join("<br>");
             errorMessageStep2.style.display = "block";
