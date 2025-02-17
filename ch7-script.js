@@ -525,36 +525,21 @@ async function doPayment(amount) {
     const paymentElement = elements.create("payment");
 
     // Remove any existing payment forms
-    const popupWrap = document.querySelector(".popup_wrap");
+    const popupWrap = document.querySelector("#payment_popup_wrapper");
     popupWrap.innerHTML = "";
     popupWrap.parentElement.classList.add("active");
     popupWrap.parentElement.style.display = "flex";
 
     // Create form for payment submission
-    const form = document.createElement("form");
-    form.id = "payment-form";
-
-    // Create div for payment element
-    const paymentElementDiv = document.createElement("div");
-    paymentElementDiv.id = "payment-element";
-    form.appendChild(paymentElementDiv);
-
+    const form = document.querySelector("#payment_gateway_contain");   
     // Create submit button
-    const submitButton = document.createElement("button");
-    submitButton.type = "submit";
-    submitButton.textContent = "Pay now";
-
-    submitButton.id = "submit-payment";
-    submitButton.style.marginTop = "20px";
-    form.appendChild(submitButton);
-
-    popupWrap.appendChild(form);
-
+    const submitButton = document.querySelector("#submit_payment");
+    
     // Mount the Payment Element
-    paymentElement.mount("#payment-element");
+    paymentElement.mount("#payment_element");
 
     // Handle form submission
-    form.addEventListener("submit", async (event) => {
+    submitButton.addEventListener("click", async (event) => {
       event.preventDefault();
       submitButton.disabled = true;
 
