@@ -526,7 +526,6 @@ async function doPayment(amount) {
 
     // Remove any existing payment forms
     const popupWrap = document.querySelector("#payment_popup_wrapper");
-    popupWrap.innerHTML = "";
     popupWrap.parentElement.classList.add("active");
     popupWrap.parentElement.style.display = "flex";
 
