@@ -563,34 +563,33 @@ function renderCheckoutCourseItem(
   return template.content.firstElementChild;
 }
 
-// Add this function to initialize Stripe
+// Update the initializeStripe function to include German localization
 async function initializeStripe() {
   if (typeof Stripe === "undefined") {
-    // Load Stripe.js if it hasn't been loaded
     const script = document.createElement("script");
     script.src = "https://js.stripe.com/v3/";
     script.async = true;
     document.head.appendChild(script);
 
-    // Wait for script to load
     await new Promise((resolve) => {
       script.onload = resolve;
     });
   }
 
-  // Initialize Stripe with your publishable key
-  // eslint-disable-next-line no-undef
-  stripe = Stripe(PUBLISHABLE_KEY);
+  // Initialize Stripe with German locale
+  stripe = Stripe(PUBLISHABLE_KEY, {
+    locale: 'de'  // Set German locale
+  });
   return stripe;
 }
 
-// Modify the doPayment function
+// Update the doPayment function to include German localization in Elements
 async function doPayment(amount) {
   try {
     const registerButton = document.querySelector("#registerFormSubmitButton")
       .querySelector(".btn_main_text");
     registerButton.textContent = dictionary["payment.processing"];
-    // Initialize Stripe if not already initialized
+    
     if (!stripe) {
       await initializeStripe();
     }
@@ -627,15 +626,17 @@ async function doPayment(amount) {
       throw new Error("No client secret received from payment intent");
     }
 
-    // Create payment element
+    // Create payment element with German localization
     const elements = stripe.elements({
       clientSecret,
+      locale: 'de',  // Set German locale for Elements
       appearance: {
         theme: "stripe",
         variables: {
           colorPrimary: "#5469d4",
         },
       },
+      loader: 'auto', // Shows a loading state in German
     });
 
     // Create and mount the Payment Element
