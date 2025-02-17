@@ -542,12 +542,7 @@ async function doPayment(amount) {
     const submitButton = document.createElement("button");
     submitButton.type = "submit";
     submitButton.textContent = "Pay now";
-    submitButton.classList.add(
-      "btn",
-      "btn-primary",
-      "g_clickable_btn",
-      "btn_main_wrap"
-    );
+
     submitButton.id = "submit-payment";
     submitButton.style.marginTop = "20px";
     form.appendChild(submitButton);
