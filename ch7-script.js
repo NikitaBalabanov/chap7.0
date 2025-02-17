@@ -231,13 +231,13 @@ async function fetchOnboardingSurvey() {
 }
 
 async function populateOnboardingSurveyStep2() {
-  const selectedCourses = getFromStorage("selectedCourses", []);
+  
   const onboardingSurvey = getFromStorage("onboardingSurvey", [])?.[1]?.answers;
   if (onboardingSurvey.length) {
     const container = document.querySelector("#onboardingSurvey");
     container.innerHTML = "";
     onboardingSurvey
-      .filter((item) => selectedCourses.includes(item.type))
+    //  .filter((item) => selectedCourses.includes(item.type))
       .forEach((data) => {
         const item = renderOnboardingSurveyItem(data.id, data.type, data.text);
         container.appendChild(item);
