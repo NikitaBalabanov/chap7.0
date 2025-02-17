@@ -326,6 +326,7 @@ function recommendCourses() {
     return acc;
   }, {});
   console.log({typeCounts});
+  setToStorage("SurveyAnswersCourseTypes", typeCounts);
   // Special case: If user selected only one type
   const uniqueTypes = Object.keys(typeCounts);
   if (uniqueTypes.length === 1) {
