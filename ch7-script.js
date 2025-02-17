@@ -526,8 +526,8 @@ async function doPayment(amount) {
 
     // Remove any existing payment forms
     const popupWrap = document.querySelector("#payment_popup_wrapper");
-    popupWrap.parentElement.classList.add("active");
-    popupWrap.parentElement.style.display = "flex";
+    popupWrap.classList.add("active");
+    popupWrap.style.display = "flex";
 
     // Create form for payment submission
     const form = document.querySelector("#payment_gateway_contain");   
@@ -944,22 +944,4 @@ document.addEventListener("DOMContentLoaded", function () {
 
   attachEventListeners();
   showStep(currentStep);
-
-  // Add this near the top of your file
-  const paymentStyles = document.createElement("style");
-  paymentStyles.textContent = `
-    #payment-form {
-      width: 100%;
-      max-width: 500px;
-      margin: 20px auto;
-      padding: 20px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    
-    #payment-element {
-      margin-bottom: 24px;
-    }
-  `;
-  document.head.appendChild(paymentStyles);
 });
