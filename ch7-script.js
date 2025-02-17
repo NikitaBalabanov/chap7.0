@@ -618,8 +618,12 @@ async function createUser() {
     const selectedCourses = getFromStorage("selectedCourses", []);
     const selectedHealthProvider = getFromStorage("selectedHealthProvider", "");
     const healthProviders = getFromStorage("healthProviders", {});
-    const onboardingSurveyAnswers = getFromStorage(
-      "onboardingSurveyAnswers",
+    const onboardingSurveyAnswers_1 = getFromStorage(
+      "onboardingSurveyAnswers_1",
+      []
+    );
+    const onboardingSurveyAnswers_2 = getFromStorage(
+      "onboardingSurveyAnswers_2",
       []
     );
 
@@ -659,8 +663,8 @@ async function createUser() {
       selectedCourses: selectedCourses.map((course) => course.toUpperCase()),
       onboarding: {
         answers: {
-          step1: selectedCourses.map((course) => course.toUpperCase()),
-          step2: onboardingSurveyAnswers || [],
+          step1: onboardingSurveyAnswers_1.map((item) => item.type),
+          step2: onboardingSurveyAnswers_2.map((item) => item.type) 
         },
       },
     };
