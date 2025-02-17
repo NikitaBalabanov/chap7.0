@@ -670,10 +670,16 @@ async function doPayment(amount) {
                 name: `${userData.firstName} ${userData.lastName}`,
                 email: userData.email,
                 address: {
-                  country: "DE",
+                  country: "DE",  // ISO country code for Germany
                 },
               },
             },
+            payment_method_options: {
+              card: {
+                setup_future_usage: 'off'
+              }
+            },
+            locale: 'de',  // Set German locale for the confirmation flow
           },
         });
 
@@ -690,7 +696,6 @@ async function doPayment(amount) {
         console.error("Payment error:", error);
       } finally {
         registerButton.textContent = dictionary["payment.payNow"];
-        // window.location.href = window.location.href.replace("onboarding", "vielen-dank");
         submitButton.disabled = false;
       }
     });
@@ -1074,4 +1079,5 @@ document.addEventListener("DOMContentLoaded", function () {
   attachEventListeners();
   showStep(currentStep);
 });
+
 
