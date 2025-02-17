@@ -315,11 +315,48 @@ function populateSummary() {
 function recommendCourses() {
   const answers_1 = getFromStorage("onboardingSurveyAnswers_1", []);
   const answers_2 = getFromStorage("onboardingSurveyAnswers_2", []);
+  const courses = getFromStorage("courses", []);
+
+  // Combine all answers into a single array of types
+  const allAnswerTypes = [...answers_1, ...answers_2].map(answer => answer.type);
   
+  // Count occurrences of each type
+  const typeCounts = allAnswerTypes.reduce((acc, type) => {
+    acc[type] = (acc[type] || 0) + 1;
+    return acc;
+  }, {});
 
+  // Special case: If user selected only one type
+  const uniqueTypes = Object.keys(typeCounts);
+  if (uniqueTypes.length === 1) {
+    const selectedType = uniqueTypes[0];
+    // Map of additional recommendations based on the selected type
+    const additionalRecommendations = {
+      'STRESS': 'FITNESS',
+      'FITNESS': 'NUTRITION',
+      'NUTRITION': 'STRESS'
+    };
+    
+    // Add the additional recommendation
+    const additionalType = additionalRecommendations[selectedType];
+    if (additionalType) {
+      typeCounts[additionalType] = 1;
+    }
+  }
 
-  const recommendedCourses = courses.filter((course) => course.recommendation_description);
+  // Get the top 2 most frequent types
+  const recommendedTypes = Object.entries(typeCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([type]) => type);
+
+  // Map types to course slugs
+  const recommendedCourses = courses
+    .filter(course => recommendedTypes.includes(course.slug))
+    .map(course => course.slug);
+
   setToStorage("recommendedCourses", recommendedCourses);
+  return recommendedCourses;
 }
 
 function fillSummaryStepData() {
