@@ -585,7 +585,7 @@ async function doPayment(amount) {
       .querySelector(".btn_main_text");
     registerButton.textContent = dictionary["payment.processing"];
     const errorDiv = document.querySelector("#error_message_payment");
-    
+
     if (!stripe) {
       await initializeStripe();
     }
@@ -670,24 +670,19 @@ async function doPayment(amount) {
                 },
               },
             },
-            payment_method_options: {
-              card: {
-                setup_future_usage: 'off'
-              }
-            },
-          
           },
         });
 
         if (error) {
           console.error("Payment failed:", error);
           // Show error to customer
-          
+          errorDiv.style.display = "block";
           errorDiv.textContent = error.message;
         }
       } catch (error) {
         console.error("Payment error:", error);
         
+        errorDiv.style.display = "block";
         errorDiv.textContent = error?.message ?? error.toString();
       } finally {
         registerButton.textContent = dictionary["payment.payNow"];
