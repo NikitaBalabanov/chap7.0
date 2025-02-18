@@ -712,7 +712,7 @@ async function doPayment(amount) {
     const popupWrap = document.querySelector("#payment_popup_wrapper");
     popupWrap.classList.add("active");
     popupWrap.style.display = "flex";
-F
+
     // Create form for payment submission
     const form = document.querySelector(".payment_gateway_contain");
     // Create submit button
