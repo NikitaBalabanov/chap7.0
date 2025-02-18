@@ -345,7 +345,7 @@ function populateSummary() {
   console.log({container});
     // Clear existing content and event listeners
  // container.innerHTML = '';
-  
+  return;
   // Add courses in reverse order
   recommendedCourses.reverse().map((course) => {
     const courseData = getFromStorage("courses", [])?.find((item) => item.slug === course);
