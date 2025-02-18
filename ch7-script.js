@@ -584,6 +584,7 @@ async function doPayment(amount) {
     const registerButton = document.querySelector("#registerFormSubmitButton")
       .querySelector(".btn_main_text");
     registerButton.textContent = dictionary["payment.processing"];
+    const errorDiv = document.querySelector("#error_message_payment");
     
     if (!stripe) {
       await initializeStripe();
@@ -681,14 +682,13 @@ async function doPayment(amount) {
         if (error) {
           console.error("Payment failed:", error);
           // Show error to customer
-          const errorDiv = document.createElement("div");
-          errorDiv.style.color = "red";
-          errorDiv.style.marginTop = "10px";
+          
           errorDiv.textContent = error.message;
-          form.appendChild(errorDiv);
         }
       } catch (error) {
         console.error("Payment error:", error);
+        
+        errorDiv.textContent = error?.message ?? error.toString();
       } finally {
         registerButton.textContent = dictionary["payment.payNow"];
         submitButton.disabled = false;
