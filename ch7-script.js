@@ -674,7 +674,7 @@ async function doPayment(amount) {
                 setup_future_usage: 'off'
               }
             },
-            locale: 'de',  // Set German locale for the confirmation flow
+          
           },
         });
 
