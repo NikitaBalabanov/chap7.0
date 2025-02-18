@@ -444,11 +444,12 @@ function onCourseSelected() {
   );
   setToStorage("selectedCourses", coursesSlugs);
   if (coursesSlugs.length === 0) {
-    button.disabled = true;
     button.classList.add("disabled");
+    button.querySelector(".g_clickable_btn").disabled = true;
+      
   } else {
-    button.disabled = false;
     button.classList.remove("disabled");
+    button.querySelector(".g_clickable_btn").disabled = false;
   }
   fillSummaryData();
 }
@@ -707,7 +708,7 @@ async function doPayment(amount) {
     const popupWrap = document.querySelector("#payment_popup_wrapper");
     popupWrap.classList.add("active");
     popupWrap.style.display = "flex";
-
+F
     // Create form for payment submission
     const form = document.querySelector(".payment_gateway_contain");
     // Create submit button
