@@ -17,23 +17,18 @@ const dictionary = {
   "error.healthProvider": "Bitte wählen Sie eine Krankenkasse aus",
   "error.selectOptions": "Bitte wählen Sie 1 oder 2 Optionen aus",
   "error.agreeToTerms": "Bitte stimmen Sie beiden Bedingungen zu",
-
   "select.healthProvider": "Bitte Krankenkasse wählen",
   "select.namePrefix.mr": "Herr",
   "select.namePrefix.mrs": "Frau",
-
   "payment.processing": "Wird bearbeitet ...",
   "payment.payNow": "Jetzt bezahlen",
   "payment.discount": "Rabatt",
-
   "button.next": "Weiter",
   "button.back": "Zurück",
   "button.submit": "Absenden",
-
   "error.payment": "Zahlungsfehler aufgetreten",
   "error.userCreation": "Fehler beim Erstellen des Benutzerkontos",
   "error.validation": "Bitte überprüfen Sie Ihre Eingaben",
-  
   "success.registration": "Registrierung erfolgreich",
   "success.payment": "Zahlung erfolgreich"
 };
@@ -338,7 +333,7 @@ function populateSummary() {
     if (courseData) {
       container.prepend(
         renderCardResult(
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Icon-round-Question_mark.svg/240px-Icon-round-Question_mark.svg.png",
+          courseData.course_cover,
           courseData.name,
           courseData.recommendation_description,
           courseData.course_color
