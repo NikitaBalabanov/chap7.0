@@ -30,16 +30,15 @@ const dictionary = {
   "error.userCreation": "Fehler beim Erstellen des Benutzerkontos",
   "error.validation": "Bitte überprüfen Sie Ihre Eingaben",
   "success.registration": "Registrierung erfolgreich",
-  "success.payment": "Zahlung erfolgreich"
+  "success.payment": "Zahlung erfolgreich",
 };
 
 const PUBLISHABLE_KEY =
   "pk_test_51QPhSmIjMlCwpKLpOSWig7J6FCQyFQ5NEysG3mXGy5tzXfZ61wwdGDSU2m6qPO8QwWeUMokteES3SyTUJlqJF6JP00zRyrYPId";
 
-let stripe; 
+let stripe;
 
 const CURRENCY = "€";
-
 
 function getDocumentFromFireBase(document) {
   return `${API}/getConfigData?document=${document}`;
@@ -53,7 +52,6 @@ function getWebflowStory(slug) {
   return `${API}/getWebflowStory?slug=${slug}&draft=true`;
 }
 
-
 // Add these helper functions
 function getFromStorage(key, defaultValue = null) {
   try {
@@ -65,7 +63,6 @@ function getFromStorage(key, defaultValue = null) {
   }
 }
 
-
 function setToStorage(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
@@ -73,7 +70,6 @@ function setToStorage(key, value) {
     console.error(`Error writing ${key} to localStorage:`, e);
   }
 }
-
 
 function onboardingHook({ current, index }) {
   console.log({ current, index });
@@ -99,7 +95,6 @@ function onboardingHook({ current, index }) {
   }
 }
 
-
 async function fetchHealthProviders() {
   try {
     const response = await fetch(getDocumentFromFireBase("healthProviders"));
@@ -115,7 +110,6 @@ async function fetchHealthProviders() {
     console.error("Error fetching health providers:", error);
   }
 }
-
 
 function populateDropdown(providers) {
   const dropdown = document.querySelector("#healthProviders");
@@ -148,7 +142,6 @@ function populateDropdown(providers) {
   dropdown.addEventListener("change", handleDropdownChange);
 }
 
-
 async function fetchPricing() {
   try {
     const res = await fetch(getDocumentFromFireBase("pricing"));
@@ -161,7 +154,6 @@ async function fetchPricing() {
     console.error(error);
   }
 }
-
 
 async function fetchContraindications() {
   try {
@@ -176,7 +168,6 @@ async function fetchContraindications() {
   }
 }
 
-
 function getFilteredContraindications() {
   const recommendedCourses = getFromStorage("recommendedCourses", []);
   const contraindications = getFromStorage("contraindications", []);
@@ -185,45 +176,43 @@ function getFilteredContraindications() {
   );
 }
 
-
 async function fetchCourses() {
   const res = await fetch(getDocumentFromFireBase("courses"));
   const data = await res.json();
   if (data.success && data.data["courses-info"].length) {
-    setToStorage("courses", data.data["courses-info"]); 
+    setToStorage("courses", data.data["courses-info"]);
   }
   return data.data["courses-info"];
 }
-
 
 async function fetchOnboardingSurvey() {
   const res = await fetch(getWebflowStory("onboarding-survey"));
   const data = await res.json();
   const onboardingSurvey = data?.story?.content?.onboarding_survey_steps;
-  console.log({onboardingSurvey});
-  if ( onboardingSurvey?.length) {
+  console.log({ onboardingSurvey });
+  if (onboardingSurvey?.length) {
     setToStorage("onboardingSurvey", onboardingSurvey);
   }
   return onboardingSurvey;
 }
 
-
 async function populateOnboardingSurveyStep1() {
-
   const onboardingSurvey = getFromStorage("onboardingSurvey", [])?.[0]?.answers;
 
   if (onboardingSurvey.length) {
     const container = document.querySelector("#coursesContainer");
     container.innerHTML = "";
-    onboardingSurvey
-      
-      .forEach((data) => {
-        const item = renderCourseItem(data.id, data.type, data.text, data.image_cover.filename);
-        container.appendChild(item);
-      });
+    onboardingSurvey.forEach((data) => {
+      const item = renderCourseItem(
+        data.id,
+        data.type,
+        data.text,
+        data.image_cover.filename
+      );
+      container.appendChild(item);
+    });
   }
 }
-
 
 function renderCourseItem(id, value, text, imgSrc) {
   const template = document.createElement("template");
@@ -258,11 +247,16 @@ function getStep1Answers() {
   const answeredIds = Array.from(selectedCheckboxes).map((checkbox) =>
     checkbox.getAttribute("data-id")
   );
-  console.log({answeredIds});
+  console.log({ answeredIds });
   const onboardingSurvey = getFromStorage("onboardingSurvey", [])?.[0]?.answers;
-  setToStorage("onboardingSurveyAnswers_1", answeredIds.map((id) => ({id, type: onboardingSurvey.find((item) => item.id === id)?.type})));
+  setToStorage(
+    "onboardingSurveyAnswers_1",
+    answeredIds.map((id) => ({
+      id,
+      type: onboardingSurvey.find((item) => item.id === id)?.type,
+    }))
+  );
 }
-
 
 function renderOnboardingSurveyItem(id, type, text) {
   const template = document.createElement("template");
@@ -275,18 +269,15 @@ function renderOnboardingSurveyItem(id, type, text) {
   return template.content.firstElementChild;
 }
 
-
 async function populateOnboardingSurveyStep2() {
   const onboardingSurvey = getFromStorage("onboardingSurvey", [])?.[1]?.answers;
   if (onboardingSurvey.length) {
     const container = document.querySelector("#onboardingSurvey");
     container.innerHTML = "";
-    onboardingSurvey
-    
-      .forEach((data) => {
-        const item = renderOnboardingSurveyItem(data.id, data.type, data.text);
-        container.appendChild(item);
-      });
+    onboardingSurvey.forEach((data) => {
+      const item = renderOnboardingSurveyItem(data.id, data.type, data.text);
+      container.appendChild(item);
+    });
   }
 }
 
@@ -299,42 +290,57 @@ function getStep2Answers() {
     (checkbox) => checkbox.id
   );
   const onboardingSurvey = getFromStorage("onboardingSurvey", [])?.[1]?.answers;
-  setToStorage("onboardingSurveyAnswers_2", surveyAnswers.map((id) => ({id, type: onboardingSurvey.find((item) => item.id === id)?.type})));
+  setToStorage(
+    "onboardingSurveyAnswers_2",
+    surveyAnswers.map((id) => ({
+      id,
+      type: onboardingSurvey.find((item) => item.id === id)?.type,
+    }))
+  );
 }
 
 function renderCardResult(imageSrc, title, text, color, slug) {
   const template = document.createElement("template");
   template.innerHTML = `
-        <div class="card_result">
-          <div class="card_form_img_contain">
-            <img src="${imageSrc}" loading="lazy" sizes="100vw" alt="" class="card_select_img">
+    <label class="w-checkbox card_result">
+      <div class="card_form_img_contain">
+        <img sizes="100vw" 
+             src="${imageSrc}" 
+             loading="lazy" 
+             alt="" 
+             class="card_select_img">
+      </div>
+      <input type="checkbox" 
+             name="checkout" 
+             data-name="checkout" 
+             data-value="${slug}" 
+             class="w-checkbox-input card_result_checkbox">
+      <span class="card_select_label w-form-label"></span>
+      <div class="card_result_content u-vflex-stretch-top u-gap-2">
+        <div class="card_result_h_wrap u-hflex-between-top u-gap-4">
+          <h4>${title}</h4>
+          <div class="icon_small is-checkmark" style="background-color: ${color}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 22 22" fill="none">
+              <path d="M9.16667 15.0334L5.5 11.3667L6.78333 10.0834L9.16667 12.4667L15.2167 6.41675L16.5 7.70008L9.16667 15.0334Z" fill="currentColor"></path>
+            </svg>
           </div>
-          <div class="card_result_content u-vflex-stretch-top u-gap-2">
-            <input type="checkbox" name="checkout" data-name="checkout" data-value="${slug}" class="w-checkbox-input course_select_checkbox">
-            <div class="card_result_h_wrap u-hflex-between-center u-gap-4">
-              <h4>${title}</h4>
-              <div class="icon_small is-checkmark" style="background-color: ${color}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 22 22" fill="none">
-                  <path d="M9.16667 15.0334L5.5 11.3667L6.78333 10.0834L9.16667 12.4667L15.2167 6.41675L16.5 7.70008L9.16667 15.0334Z" fill="white"></path>
-                </svg>
-              </div>
-            </div>
-            <div>${text}</div>
-          </div>
-        </div>`;
+        </div>
+        <div>${text}</div>
+      </div>
+    </label>`;
 
   return template.content.firstElementChild;
 }
 
 function onCourseSelected() {
   const selectedCheckboxes = document.querySelectorAll(
-    ".course_select_checkbox:checked"
+    ".card_result_checkbox:checked"
   );
 
   const coursesSlugs = Array.from(selectedCheckboxes).map((checkbox) =>
     checkbox.getAttribute("data-value")
   );
-  console.log({selectedCourses: coursesSlugs});
+  console.log({ selectedCourses: coursesSlugs });
   setToStorage("selectedCourses", coursesSlugs);
   fillSummaryData();
 }
@@ -342,13 +348,15 @@ function onCourseSelected() {
 function populateSummary() {
   const container = document.querySelector("#summary");
   const recommendedCourses = getFromStorage("recommendedCourses", []);
-  console.log({container});
-    // Clear existing content and event listeners
- // container.innerHTML = '';
-  return;
+  console.log({ container });
+  // Clear existing content and event listeners
+  // container.innerHTML = '';
+
   // Add courses in reverse order
   recommendedCourses.reverse().map((course) => {
-    const courseData = getFromStorage("courses", [])?.find((item) => item.slug === course);
+    const courseData = getFromStorage("courses", [])?.find(
+      (item) => item.slug === course
+    );
     if (courseData) {
       container.prepend(
         renderCardResult(
@@ -363,13 +371,12 @@ function populateSummary() {
   });
 
   // Add change event listener to the container
-  container.addEventListener('change', (event) => {
+  container.addEventListener("change", (event) => {
     // Check if the changed element is a checkbox
-    if (event.target.classList.contains('course_select_checkbox')) {
+    if (event.target.classList.contains("course_select_checkbox")) {
       onCourseSelected();
     }
   });
-
 }
 
 function recommendCourses() {
@@ -378,14 +385,16 @@ function recommendCourses() {
   const courses = getFromStorage("courses", []);
 
   // Combine all answers into a single array of types
-  const allAnswerTypes = [...answers_1, ...answers_2].map(answer => answer.type);
-  
+  const allAnswerTypes = [...answers_1, ...answers_2].map(
+    (answer) => answer.type
+  );
+
   // Count occurrences of each type
   const typeCounts = allAnswerTypes.reduce((acc, type) => {
     acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {});
-  console.log({typeCounts});
+  console.log({ typeCounts });
   setToStorage("SurveyAnswersCourseTypes", typeCounts);
   // Special case: If user selected only one type
   const uniqueTypes = Object.keys(typeCounts);
@@ -393,11 +402,11 @@ function recommendCourses() {
     const selectedType = uniqueTypes[0];
     // Map of additional recommendations based on the selected type
     const additionalRecommendations = {
-      'STRESS': 'FITNESS',
-      'FITNESS': 'NUTRITION',
-      'NUTRITION': 'STRESS'
+      STRESS: "FITNESS",
+      FITNESS: "NUTRITION",
+      NUTRITION: "STRESS",
     };
-    
+
     // Add the additional recommendation
     const additionalType = additionalRecommendations[selectedType];
     if (additionalType) {
@@ -413,11 +422,11 @@ function recommendCourses() {
 
   // Map types to course slugs
   const recommendedCourses = courses
-    .filter(course => recommendedTypes.includes(course.slug))
-    .map(course => course.slug);
+    .filter((course) => recommendedTypes.includes(course.slug))
+    .map((course) => course.slug);
 
   setToStorage("recommendedCourses", recommendedCourses);
-  
+
   return recommendedCourses;
 }
 
@@ -475,7 +484,7 @@ function renderContraindicationItem(slug, name, contraindications) {
 function calculateTotalPrice() {
   const pricing = getFromStorage("pricing", {});
   const selectedCourses = getFromStorage("selectedCourses", []);
-  
+
   if (selectedCourses.length === 2) {
     return Number(pricing.twoCoursesPrice);
   } else if (selectedCourses.length === 1) {
@@ -488,7 +497,7 @@ function calculateTotalPrice() {
 function calculateDiscountPercentage() {
   const pricing = getFromStorage("pricing", {});
   const selectedCourses = getFromStorage("selectedCourses", []);
-  
+
   if (selectedCourses.length === 2) {
     const regularPrice = Number(pricing.singleCoursePrice) * 2;
     const discountedPrice = Number(pricing.twoCoursesPrice);
@@ -507,10 +516,12 @@ function populateCheckout() {
   const pricing = getFromStorage("pricing", {});
 
   const discountPercentage = calculateDiscountPercentage();
-  const priceOld = recommendedCourses.length === 2 ? Number(pricing.singleCoursePrice) : "";
-  const priceNew = recommendedCourses.length === 2 
-    ? Number(pricing.twoCoursesPrice) / 2 
-    : Number(pricing.singleCoursePrice);
+  const priceOld =
+    recommendedCourses.length === 2 ? Number(pricing.singleCoursePrice) : "";
+  const priceNew =
+    recommendedCourses.length === 2
+      ? Number(pricing.twoCoursesPrice) / 2
+      : Number(pricing.singleCoursePrice);
 
   filteredCourses.forEach((course) => {
     if (recommendedCourses.includes(course.slug)) {
@@ -523,7 +534,7 @@ function populateCheckout() {
       container.appendChild(item);
     }
   });
-  
+
   totalContainer.innerHTML = calculateTotalPrice().toFixed(2) + CURRENCY;
 }
 
@@ -601,7 +612,7 @@ async function initializeStripe() {
 
   // Initialize Stripe with German locale
   stripe = Stripe(PUBLISHABLE_KEY, {
-    locale: 'de'  // Set German locale
+    locale: "de", // Set German locale
   });
   return stripe;
 }
@@ -609,7 +620,8 @@ async function initializeStripe() {
 // Update the doPayment function to include German localization in Elements
 async function doPayment(amount) {
   try {
-    const registerButton = document.querySelector("#registerFormSubmitButton")
+    const registerButton = document
+      .querySelector("#registerFormSubmitButton")
       .querySelector(".btn_main_text");
     registerButton.textContent = dictionary["payment.processing"];
     const errorDiv = document.querySelector("#error_message_payment");
@@ -653,14 +665,14 @@ async function doPayment(amount) {
     // Create payment element with German localization
     const elements = stripe.elements({
       clientSecret,
-      locale: 'de',  // Set German locale for Elements
+      locale: "de", // Set German locale for Elements
       appearance: {
         theme: "stripe",
         variables: {
           colorPrimary: "#5469d4",
         },
       },
-      loader: 'auto', // Shows a loading state in German
+      loader: "auto", // Shows a loading state in German
     });
 
     // Create and mount the Payment Element
@@ -672,10 +684,10 @@ async function doPayment(amount) {
     popupWrap.style.display = "flex";
 
     // Create form for payment submission
-    const form = document.querySelector(".payment_gateway_contain");   
+    const form = document.querySelector(".payment_gateway_contain");
     // Create submit button
     const submitButton = document.querySelector("#submit_payment");
-    
+
     // Mount the Payment Element
     paymentElement.mount("#payment_element");
 
@@ -688,13 +700,16 @@ async function doPayment(amount) {
         const { error } = await stripe.confirmPayment({
           elements,
           confirmParams: {
-            return_url: window.location.href.replace("onboarding", "vielen-dank"),
+            return_url: window.location.href.replace(
+              "onboarding",
+              "vielen-dank"
+            ),
             payment_method_data: {
               billing_details: {
                 name: `${userData.firstName} ${userData.lastName}`,
                 email: userData.email,
                 address: {
-                  country: "DE",  // ISO country code for Germany
+                  country: "DE", // ISO country code for Germany
                 },
               },
             },
@@ -709,7 +724,7 @@ async function doPayment(amount) {
         }
       } catch (error) {
         console.error("Payment error:", error);
-        
+
         errorDiv.style.display = "block";
         errorDiv.textContent = error?.message ?? error.toString();
       } finally {
@@ -776,7 +791,7 @@ async function createUser() {
       onboarding: {
         answers: {
           step1: onboardingSurveyAnswers_1.map((item) => item.type),
-          step2: onboardingSurveyAnswers_2.map((item) => item.type) 
+          step2: onboardingSurveyAnswers_2.map((item) => item.type),
         },
       },
     };
@@ -812,13 +827,13 @@ function populateNamePrefix() {
   const namePrefixSelect = document.querySelector('select[name="namePrefix"]');
   const prefixes = [
     { value: "Mr.", text: dictionary["select.namePrefix.mr"] },
-    { value: "Mrs.", text: dictionary["select.namePrefix.mrs"] }
+    { value: "Mrs.", text: dictionary["select.namePrefix.mrs"] },
   ];
-  
+
   while (namePrefixSelect.options.length > 1) {
     namePrefixSelect.remove(1);
   }
-  
+
   prefixes.forEach((prefix) => {
     const option = document.createElement("option");
     option.value = prefix.value;
@@ -870,14 +885,20 @@ document.addEventListener("DOMContentLoaded", function () {
       switch (currentStep) {
         case 0:
           const dropdown = document.getElementById("healthProviders");
-          if (!dropdown || dropdown.value.trim() === "" || dropdown.value === null) {
+          if (
+            !dropdown ||
+            dropdown.value.trim() === "" ||
+            dropdown.value === null
+          ) {
             valid = false;
             errorMessages.push(dictionary["error.healthProvider"]);
           }
           break;
 
         case 1:
-          const checkboxesStep2 = document.querySelectorAll(".card_select_checkbox:checked");
+          const checkboxesStep2 = document.querySelectorAll(
+            ".card_select_checkbox:checked"
+          );
           if (checkboxesStep2.length < 1 || checkboxesStep2.length > 2) {
             valid = false;
             errorMessages.push(dictionary["error.selectOptions"]);
@@ -885,7 +906,9 @@ document.addEventListener("DOMContentLoaded", function () {
           break;
 
         case 2:
-          const checkboxesStep3 = document.querySelectorAll(".custom-checkbox-input:checked");
+          const checkboxesStep3 = document.querySelectorAll(
+            ".custom-checkbox-input:checked"
+          );
           if (checkboxesStep3.length < 1 || checkboxesStep3.length > 2) {
             valid = false;
             errorMessages.push(dictionary["error.selectOptions"]);
@@ -1005,7 +1028,7 @@ document.addEventListener("DOMContentLoaded", function () {
               errorMessages.push(dictionary["error.privacyPolicy"]);
             }
           });
-          
+
           if (valid) {
             setToStorage("userData", formData);
             await createUser();
@@ -1057,7 +1080,7 @@ document.addEventListener("DOMContentLoaded", function () {
   async function handleNextClick(event) {
     console.log("handleNextClick");
     event.preventDefault();
-    
+
     try {
       const isValid = await isCurrentStepValid();
       console.log("isValid", isValid);
@@ -1097,5 +1120,3 @@ document.addEventListener("DOMContentLoaded", function () {
   attachEventListeners();
   showStep(currentStep);
 });
-
-
