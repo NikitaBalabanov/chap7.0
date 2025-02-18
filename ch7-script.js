@@ -40,6 +40,8 @@ let stripe;
 
 const CURRENCY = "€";
 
+const DEFAULT_CHECKMARK_COLOR = "#E5E7EB";
+
 function getDocumentFromFireBase(document) {
   return `${API}/getConfigData?document=${document}`;
 }
@@ -319,7 +321,7 @@ function renderCardResult(imageSrc, title, text, color, slug) {
       <div class="card_result_content u-vflex-stretch-top u-gap-2">
         <div class="card_result_h_wrap u-hflex-between-top u-gap-4">
           <h4>${title}</h4>
-          <div class="icon_small is-checkmark" style="background-color: ${color}">
+          <div class="icon_small is-checkmark" style="background-color: ${DEFAULT_CHECKMARK_COLOR}">
             <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 22 22" fill="none">
               <path d="M9.16667 15.0334L5.5 11.3667L6.78333 10.0834L9.16667 12.4667L15.2167 6.41675L16.5 7.70008L9.16667 15.0334Z" fill="currentColor"></path>
             </svg>
@@ -329,7 +331,19 @@ function renderCardResult(imageSrc, title, text, color, slug) {
       </div>
     </label>`;
 
-  return template.content.firstElementChild;
+  const element = template.content.firstElementChild;
+  const checkbox = element.querySelector('.card_result_checkbox');
+  const checkmark = element.querySelector('.icon_small.is-checkmark');
+  
+  // Set initial color (gray)
+  checkmark.style.backgroundColor = DEFAULT_CHECKMARK_COLOR;
+  
+  // Add change event listener
+  checkbox.addEventListener('change', function() {
+    checkmark.style.backgroundColor = this.checked ? color : DEFAULT_CHECKMARK_COLOR;
+  });
+
+  return element;
 }
 
 function onCourseSelected() {
