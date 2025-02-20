@@ -887,22 +887,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let currentStep = 0;
   const stepMaps = {
-    0: "step1",
-    1: "step2",
-    2: "step2",
-    3: "step3",
-    4: "step3",
+    0: "#step1",
+    1: "#step2",
+    2: "#step2",
+    3: "#step3",
+    4: "#step3",
   };
 
   function showStep(index) {
-    document.querySelector(stepMaps[index]).classList.add("active");
+    
     steps.forEach((step) => {
       step.classList.remove("active");
+      document.querySelector(stepMaps[index])?.classList.remove("active");
       step.style.display = "none";
     });
 
     if (steps[index]) {
       steps[index].classList.add("active");
+      document.querySelector(stepMaps[index])?.classList.add("active");
       steps[index].style.display = steps[index].classList.contains(
         "form_step_popup"
       )
