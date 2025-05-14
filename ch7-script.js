@@ -546,6 +546,14 @@ function calculateDiscountPercentage() {
 
 // Update populateCheckout to use the new utility function
 function populateCheckout() {
+
+  if (getFromStorage("trial", false)) {
+    const container = document.querySelector(".recap_final_contain");
+    container.innerHTML = `
+     <button type="submit" data-btn-submit="" class="g_clickable_btn"><span class="g_clickable_text u-sr-only">Kurseinheit ausprobieren</span></button>
+    `;
+    return;
+  }
   const container = document.querySelector("#productList");
   const totalContainer = document.querySelector("#priceTotal");
   const filteredCourses = getFromStorage("courses", []);
@@ -1086,6 +1094,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
           if (valid) {
             setToStorage("userData", formData);
+            if (getFromStorage("trial", false)) {
+              createTrialUser();
+              return
+            }
             await createUser();
             await doPayment(calculateTotalPrice());
           }
@@ -1175,3 +1187,12 @@ document.addEventListener("DOMContentLoaded", function () {
   attachEventListeners();
   showStep(currentStep);
 });
+
+
+function createTrialUser() {
+  const userData = getFromStorage("userData", {});
+  const trialUser = {
+    ...userData,
+    trial: true,
+  };
+}
