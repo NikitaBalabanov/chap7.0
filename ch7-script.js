@@ -896,13 +896,14 @@ document.addEventListener("DOMContentLoaded", function () {
     ".form_step_wrap .form_step, .form_step_popup"
   );
   const prevBtns = document.querySelectorAll("[data-btn-prev]");
-  const nextBtns = document.querySelectorAll("[data-btn-next]");
+  const nextBtns = [...document.querySelectorAll("[data-btn-next]"), document.querySelector("#button_trial")];
   const submitBtn = document.querySelector("[data-btn-submit]");
   const errorMessageStep1 = document.getElementById("error_message_step1");
   const errorMessageStep2 = document.getElementById("error_message");
   const errorMessageStep3 = document.getElementById("error_message_step3");
   const errorMessageStep4 = document.getElementById("error_message_step4");
   const errorMessageStep5 = document.getElementById("error_message_step5");
+  console.log("nextBtns", nextBtns);
 
   let currentStep = 0;
   const stepMaps = {
