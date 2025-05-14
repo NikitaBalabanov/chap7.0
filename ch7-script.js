@@ -546,7 +546,7 @@ function calculateDiscountPercentage() {
 
 // Update populateCheckout to use the new utility function
 function populateCheckout() {
-
+  setToStorage("trial", false);
   if (getFromStorage("trial", false)) {
     const container = document.querySelectorAll(".recap_final_contain")[1];
     container.innerHTML = `
