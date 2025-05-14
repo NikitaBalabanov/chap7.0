@@ -548,7 +548,7 @@ function calculateDiscountPercentage() {
 function populateCheckout() {
 
   if (getFromStorage("trial", false)) {
-    const container = document.querySelector(".recap_final_contain");
+    const container = document.querySelectorAll(".recap_final_contain")[1];
     container.innerHTML = `
      <button type="submit" data-btn-submit="" class="g_clickable_btn"><span class="g_clickable_text u-sr-only">Kurseinheit ausprobieren</span></button>
     `;
