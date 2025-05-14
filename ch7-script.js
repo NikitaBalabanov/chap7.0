@@ -1095,7 +1095,7 @@ document.addEventListener("DOMContentLoaded", function () {
           if (valid) {
             setToStorage("userData", formData);
             if (getFromStorage("trial", false)) {
-              createTrialUser();
+             await createTrialUser();
               return
             }
             await createUser();
@@ -1189,10 +1189,77 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-function createTrialUser() {
-  const userData = getFromStorage("userData", {});
-  const trialUser = {
-    ...userData,
-    trial: true,
-  };
+async function createTrialUser() {
+  try {
+    const userData = getFromStorage("userData", {});
+    const recommendedCourses = getFromStorage("recommendedCourses", []);
+    const selectedHealthProvider = getFromStorage("selectedHealthProvider", "");
+    const healthProviders = getFromStorage("healthProviders", {});
+    const onboardingSurveyAnswers_1 = getFromStorage("onboardingSurveyAnswers_1", []);
+    const onboardingSurveyAnswers_2 = getFromStorage("onboardingSurveyAnswers_2", []);
+
+    const trialValidTill = new Date();
+    trialValidTill.setDate(trialValidTill.getDate() + 14);
+    const trialValidTillStr = trialValidTill.toISOString().split("T")[0];
+
+    const paidCourses = recommendedCourses.map(course => ({
+      course: course.toUpperCase(),
+      status: "not-active",
+      validTill: null,
+      isTrial: true,
+      trialValidTill: trialValidTillStr
+    }));
+
+    const healthProviderData = healthProviders[selectedHealthProvider];
+    const hasContraindications = getFilteredContraindications().length > 0;
+
+    const payload = {
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      password: userData.password,
+      dateOfBirth: userData.dateOfBirth,
+      namePrefix: userData.namePrefix,
+      hasPreconditions: hasContraindications,
+      healthProvider: {
+        maxCoursePrice: healthProviderData?.maxCoursePrice || "",
+        name: selectedHealthProvider,
+        numberOfCourses: recommendedCourses.length.toString(),
+        takeover: healthProviderData?.takeover || "",
+      },
+      paidCourses,
+      selectedCourses: recommendedCourses.map(course => course.toUpperCase()),
+      onboarding: {
+        answers: {
+          step1: onboardingSurveyAnswers_1.map(item => item.type),
+          step2: onboardingSurveyAnswers_2.map(item => item.type),
+        },
+      },
+    };
+
+    setToStorage("createUserPayload", payload);
+
+    const response = await fetch(getCreateUserBaseUrl(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    setToStorage("createUserResponse", data);
+    setToStorage("userId", data.userId);
+
+    if (!response.ok) throw new Error(data.message || "Failed to create trial user");
+
+    window.location.href = window.location.href.replace(
+      "onboarding",
+      "vielen-dank"
+    );
+
+    return data;
+  } catch (error) {
+    setToStorage("createUserResponse", error);
+    console.error("Error creating trial user:", error);
+    throw error;
+  }
 }
