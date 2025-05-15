@@ -793,6 +793,8 @@ async function doPayment(amount) {
 // Add this function to create the user
 async function createUser() {
   try {
+    const errorDiv = document.querySelector("#error_message_step5");
+    errorDiv.style.display = "none";
     const userData = getFromStorage("userData", {});
     const recommendedCourses = getFromStorage("recommendedCourses", []);
     const selectedHealthProvider = getFromStorage("selectedHealthProvider", "");
@@ -859,6 +861,18 @@ async function createUser() {
     });
 
     const data = await response.json();
+
+    if (data.message) {
+      errorDiv.style.display = "block";
+      errorDiv.textContent = data.message;
+
+    }
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Failed to create user");
+    }
+
+   
 
     setToStorage("createUserResponse", data);
     setToStorage("userId", data.userId);
@@ -1195,6 +1209,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
 async function createTrialUser() {
   try {
+    const errorDiv = document.querySelector("#error_message_step5");
+    errorDiv.style.display = "none";
     const userData = getFromStorage("userData", {});
     const recommendedCourses = getFromStorage("recommendedCourses", []);
     const selectedHealthProvider = getFromStorage("selectedHealthProvider", "");
@@ -1261,7 +1277,6 @@ async function createTrialUser() {
 
     if (!response.ok || !data.success) {
       if (data.message) {
-        const errorDiv = document.querySelector("#error_message_payment");
         errorDiv.style.display = "block";
         errorDiv.textContent = data.message;
 
