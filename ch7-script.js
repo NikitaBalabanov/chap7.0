@@ -564,7 +564,7 @@ function populateCheckout() {
       container.appendChild(item);
     }
   });
-  
+
   if (getFromStorage("trial", false)) {
     const container = document.querySelector(".price_total");
     container.innerHTML = ''
@@ -582,17 +582,6 @@ function populateCheckout() {
       ? Number(pricing.twoCoursesPrice) / 2
       : Number(pricing.singleCoursePrice);
 
-  filteredCourses.forEach((course) => {
-    if (selectedCourses.includes(course.slug)) {
-      const item = renderCheckoutItem(
-        course.name,
-        discountPercentage ? `${discountPercentage}%` : "",
-        priceOld,
-        priceNew
-      );
-      container.appendChild(item);
-    }
-  });
 
   totalContainer.innerHTML = calculateTotalPrice().toFixed(2) + CURRENCY;
 }
