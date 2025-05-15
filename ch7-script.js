@@ -547,6 +547,12 @@ function calculateDiscountPercentage() {
 // Update populateCheckout to use the new utility function
 function populateCheckout() {
   const container = document.querySelector("#productList");
+  const filteredCourses = getFromStorage("courses", []);
+  const totalContainer = document.querySelector("#priceTotal");
+  const selectedCourses = getFromStorage("selectedCourses", []);
+  const pricing = getFromStorage("pricing", {});
+
+  const discountPercentage = calculateDiscountPercentage();
   filteredCourses.forEach((course) => {
     if (selectedCourses.includes(course.slug)) {
       const item = renderCheckoutItem(
@@ -558,11 +564,10 @@ function populateCheckout() {
       container.appendChild(item);
     }
   });
+  
   if (getFromStorage("trial", false)) {
-    
     const container = document.querySelector(".price_total");
     container.innerHTML = ''
-
     const buttons = Array.from(document.querySelectorAll(".btn_main_text")).filter(btn => btn.textContent === "Jetzt kaufen");
     buttons.forEach(button => {
       button.innerHTML = "Kurseinheit ausprobieren";
@@ -570,12 +575,6 @@ function populateCheckout() {
     return;
   }
   
-  const totalContainer = document.querySelector("#priceTotal");
-  const filteredCourses = getFromStorage("courses", []);
-  const selectedCourses = getFromStorage("selectedCourses", []);
-  const pricing = getFromStorage("pricing", {});
-
-  const discountPercentage = calculateDiscountPercentage();
   const priceOld =
     selectedCourses.length === 2 ? Number(pricing.singleCoursePrice) : "";
   const priceNew =
