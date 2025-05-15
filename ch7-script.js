@@ -546,19 +546,30 @@ function calculateDiscountPercentage() {
 
 // Update populateCheckout to use the new utility function
 function populateCheckout() {
+  const container = document.querySelector("#productList");
+  filteredCourses.forEach((course) => {
+    if (selectedCourses.includes(course.slug)) {
+      const item = renderCheckoutItem(
+        course.name,
+        discountPercentage ? `${discountPercentage}%` : "",
+        priceOld,
+        priceNew
+      );
+      container.appendChild(item);
+    }
+  });
   if (getFromStorage("trial", false)) {
-    return
-    const container = document.querySelectorAll(".product_overview_wrap")[1];
+    
+    const container = document.querySelector(".price_total");
     container.innerHTML = ''
-    const container2 = document.querySelectorAll(".recap_final_contain")[1];
-    container2.innerHTML = ''
+
     const buttons = Array.from(document.querySelectorAll(".btn_main_text")).filter(btn => btn.textContent === "Jetzt kaufen");
     buttons.forEach(button => {
       button.innerHTML = "Kurseinheit ausprobieren";
     });
     return;
   }
-  const container = document.querySelector("#productList");
+  
   const totalContainer = document.querySelector("#priceTotal");
   const filteredCourses = getFromStorage("courses", []);
   const selectedCourses = getFromStorage("selectedCourses", []);
