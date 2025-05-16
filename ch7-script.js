@@ -815,6 +815,7 @@ async function createUser() {
     errorDiv.style.display = "none";
     const userData = getFromStorage("userData", {});
     const selectedCourses = getFromStorage("selectedCourses", []);
+    const recommendedCourses = getFromStorage("recommendedCourses", []);
     const selectedHealthProvider = getFromStorage("selectedHealthProvider", "");
     const healthProviders = getFromStorage("healthProviders", {});
     const onboardingSurveyAnswers_1 = getFromStorage(
@@ -859,7 +860,7 @@ async function createUser() {
         takeover: healthProviderData.takeover || "",
       },
       paidCourses: paidCourses,
-      selectedCourses: recommendedCourses.map((course) => course.toUpperCase()),
+      selectedCourses: selectedCourses.map((course) => course.toUpperCase()),
       onboarding: {
         answers: {
           step1: onboardingSurveyAnswers_1.map((item) => item.type),
@@ -1229,6 +1230,7 @@ async function createTrialUser() {
     errorDiv.style.display = "none";
     const userData = getFromStorage("userData", {});
     const selectedCourses = getFromStorage("selectedCourses", []);
+    const recommendedCourses = getFromStorage("recommendedCourses", []);
     const selectedHealthProvider = getFromStorage("selectedHealthProvider", "");
     const healthProviders = getFromStorage("healthProviders", {});
     const onboardingSurveyAnswers_1 = getFromStorage(
@@ -1244,7 +1246,7 @@ async function createTrialUser() {
     trialValidTill.setDate(trialValidTill.getDate() + 14);
     const trialValidTillStr = trialValidTill.toISOString().split("T")[0];
 
-    const paidCourses = recommendedCourses.map((course) => ({
+    const paidCourses = selectedCourses.map((course) => ({
       course: course.toUpperCase(),
       status: "active",
       validTill: null,
