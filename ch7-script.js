@@ -916,10 +916,10 @@ async function populateNamePrefix() {
     namePrefixSelect.remove(1);
   }
 
-  prefixes.forEach((prefix) => {
+  Object.entries(prefixes).forEach(([value, text]) => {
     const option = document.createElement("option");
-    option.value = prefix.value;
-    option.textContent = prefix.text;
+    option.value = value;
+    option.textContent = text;
     namePrefixSelect.appendChild(option);
   });
 }
