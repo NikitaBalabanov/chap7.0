@@ -463,7 +463,7 @@ function onCourseSelected() {
   const selectedCheckboxes = document.querySelectorAll(
     ".card_result_checkbox:checked"
   );
-  const button = document.querySelector("#result");
+  const button = getSiblingButtonBySelector("#button_purchase_onb_recommendation", "button");
 
   const coursesSlugs = Array.from(selectedCheckboxes).map((checkbox) =>
     checkbox.getAttribute("data-value")
