@@ -540,25 +540,14 @@ function calculateTotalPrice() {
   const pricing = getFromStorage("pricing", {});
   const selectedCourses = getFromStorage("selectedCourses", []);
 
-  if (selectedCourses.length === 2) {
-    return Number(pricing.twoCoursesPrice);
-  } else if (selectedCourses.length === 1) {
-    return Number(pricing.singleCoursePrice);
-  }
-  return 0;
+  // Use single course price for all courses - no volume discount
+  const pricePerCourse = Number(pricing.singleCoursePrice) || 0;
+  return pricePerCourse * selectedCourses.length;
 }
 
 // Add this utility function near the other utility functions
 function calculateDiscountPercentage() {
-  const pricing = getFromStorage("pricing", {});
-  const selectedCourses = getFromStorage("selectedCourses", []);
-
-  if (selectedCourses.length === 2) {
-    const regularPrice = Number(pricing.singleCoursePrice) * 2;
-    const discountedPrice = Number(pricing.twoCoursesPrice);
-    const discount = ((regularPrice - discountedPrice) / regularPrice) * 100;
-    return Math.round(discount); // Round to nearest integer
-  }
+  // No more volume discounts - always return 0
   return 0;
 }
 
@@ -570,12 +559,8 @@ function populateCheckout() {
   const selectedCourses = getFromStorage("selectedCourses", []);
   const pricing = getFromStorage("pricing", {});
 
-  const priceOld =
-    selectedCourses.length === 2 ? Number(pricing.singleCoursePrice) : "";
-  const priceNew =
-    selectedCourses.length === 2
-      ? Number(pricing.twoCoursesPrice) / 2
-      : Number(pricing.singleCoursePrice);
+  // Use single price per course - no volume discount
+  const pricePerCourse = Number(pricing.singleCoursePrice) || 0;
 
   if (getFromStorage("trial", false)) {
     const container = document.querySelector(".price_total");
@@ -588,14 +573,14 @@ function populateCheckout() {
     });
     return;
   }
-  const discountPercentage = calculateDiscountPercentage();
+
   filteredCourses.forEach((course) => {
     if (selectedCourses.includes(course.slug)) {
       const item = renderCheckoutItem(
         course.name,
-        discountPercentage ? `${discountPercentage}%` : "",
-        priceOld,
-        priceNew
+        "", // No discount badge
+        "", // No old price
+        pricePerCourse
       );
       container.appendChild(item);
     }
@@ -612,17 +597,7 @@ function renderCheckoutItem(title, badgeText, priceOld, priceNew) {
         <div class="card_product_top">
             <div class="product_name">${title}</div>
             <div class="card_product_price">
-                ${
-                  badgeText
-                    ? `<div class="badge is-rabatt"><div><span>${badgeText}</span> ${dictionary["payment.discount"]}</div></div>`
-                    : ""
-                }
                 <div class="price_text_new">${priceNew}€</div>
-                ${
-                  priceOld
-                    ? `<div class="price_text_full text-decoration-strikethrough">${priceOld}€</div>`
-                    : ""
-                }
             </div>
         </div>
     </div>
@@ -635,8 +610,7 @@ function renderCheckoutCourseItem(
   imageSrc,
   title,
   description,
-  priceOld,
-  priceNew,
+  price,
   badgeText,
   badgeColor
 ) {
@@ -648,14 +622,13 @@ function renderCheckoutCourseItem(
         <div class="card_product_top">
           <h4 class="product_name">${title}</h4>
           <div class="card_product_price">
-            <div class="price_text_new">${priceNew}${CURRENCY}</div>
-            <div class="price_text_full text-decoration-strikethrough">${priceOld}</div>
+            <div class="price_text_new">${price}${CURRENCY}</div>
           </div>
         </div>
         <div class="product_description">${description}</div>
-        <div class="badge is-border u-align-self-start">
+        ${badgeText ? `<div class="badge is-border u-align-self-start">
           <div class="badge_text_small" style="color: ${badgeColor}">${badgeText}</div>
-        </div>
+        </div>` : ''}
       </div>
     </div>`;
 
