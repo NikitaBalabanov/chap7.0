@@ -494,7 +494,12 @@ function onCourseSelected() {
 function populateSummary() {
   const container = document.querySelector("#summary");
   const recommendedCourses = getFromStorage("recommendedCourses", []);
-  console.log({ container });
+  const summaryWrap = container.querySelector(".summary_wrap");
+  container.innerHTML = "";
+  
+  if (summaryWrap) {
+    container.appendChild(summaryWrap);
+  }
   // Add courses in reverse order
   recommendedCourses.reverse().map((course) => {
     const courseData = getFromStorage("courses", [])?.find(
