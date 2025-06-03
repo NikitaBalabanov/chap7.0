@@ -541,7 +541,7 @@ function calculateTotalPrice() {
   const selectedCourses = getFromStorage("selectedCourses", []);
 
   // Use single course price for all courses - no volume discount
-  const pricePerCourse = Number(pricing.singleCoursePrice) || 0;
+  const pricePerCourse = Number(pricing.programPrice) || 0;
   return pricePerCourse * selectedCourses.length;
 }
 
@@ -1288,3 +1288,5 @@ async function createTrialUser() {
     throw error;
   }
 }
+
+
