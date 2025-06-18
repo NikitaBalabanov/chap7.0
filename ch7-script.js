@@ -20,7 +20,6 @@ const dictionary = {
   "error.selectOptions": "Bitte wählen Sie mehr als 1 Option aus",
   "error.agreeToTerms": "Bitte stimmen Sie beiden Bedingungen zu",
   "select.healthProvider": "Bitte Krankenkasse wählen",
-  
   "payment.processing": "Wird bearbeitet ...",
   "payment.payNow": "Jetzt bezahlen",
   "payment.discount": "Rabatt",
@@ -430,13 +429,17 @@ function fillSummaryData() {
   price.innerHTML = calculateTotalPrice() + CURRENCY;
 
   const coursesCountElement = document.querySelector(".courses-info-duration");
+  const overviewCoursesCountElement = document.querySelector(".course-duration-overview");
   const cc = getFromStorage("selectedCourses", []).length;
   if (cc === 1) {
     coursesCountElement.innerHTML = "Für 1 Kurs – 12 Monate Zugang";
+    overviewCoursesCountElement.innerHTML = "12 Monate Zugang";
   } else if (cc === 2) {
     coursesCountElement.innerHTML = "Für 2 Kurse – 18 Monate Zugang";
+    overviewCoursesCountElement.innerHTML = "18 Monate Zugang";
   } else {
     coursesCountElement.innerHTML = "Bitte wählen Sie mindestens 1 Kurs";
+    overviewCoursesCountElement.innerHTML = "12 Monate Zugang";
   }
   
     
