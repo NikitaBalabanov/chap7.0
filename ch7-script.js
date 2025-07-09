@@ -742,7 +742,7 @@ async function doPayment(amount) {
     setToStorage("paymentIntentPayload", body);
     // Create payment intent with proper error handling
     const response = await fetch(
-      "https://us-central1-mind-c3055.cloudfunctions.net/createPaymentIntent",
+      "https://europe-west3-mind-c3055.cloudfunctions.net/createPaymentIntent",
       {
         method: "POST",
         body: JSON.stringify(body),
