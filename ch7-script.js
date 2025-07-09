@@ -813,7 +813,7 @@ async function createUser() {
     const selectedCourses = getFromStorage("selectedCourses", []);
     const recommendedCourses = getFromStorage("recommendedCourses", []);
     const selectedHealthProvider = getFromStorage("selectedHealthProvider", "");
-    const healthProviders = getFromStorage("healthProviders", {});
+    const healthProviders = getFromStorage("healthInsuranceProviders", {});
     const onboardingSurveyAnswers_1 = getFromStorage(
       "onboardingSurveyAnswers_1",
       []
