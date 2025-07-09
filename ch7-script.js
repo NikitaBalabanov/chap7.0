@@ -27,10 +27,13 @@ const dictionary = {
   "button.back": "Zurück",
   "button.submit": "Absenden",
   "error.payment": "Zahlungsfehler aufgetreten",
+  "error.paymentIncomplete": "Die Zahlung konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.",
+  "error.invoice": "Rechnung konnte nicht erstellt werden",
   "error.userCreation": "Fehler beim Erstellen des Benutzerkontos",
   "error.validation": "Bitte überprüfen Sie Ihre Eingaben",
   "success.registration": "Registrierung erfolgreich",
   "success.payment": "Zahlung erfolgreich",
+  "success.invoice": "Rechnung wurde erstellt und per E-Mail versandt",
 };
 
 const PUBLISHABLE_KEY =
@@ -678,6 +681,45 @@ async function initializeStripe() {
   return stripe;
 }
 
+// Function to handle purchase and invoice generation after successful payment
+async function handlePurchaseAndInvoice(paymentIntentId, amount, userId) {
+  try {
+    const response = await fetch(
+      "https://europe-west3-mind-c3055.cloudfunctions.net/handlePurchaseAndInvoice",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          paymentIntentId,
+          amount,
+          userId,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to generate invoice");
+    }
+
+    if (data.success && data.pdfUrl) {
+      console.log("Invoice generated successfully:", data.pdfUrl);
+      setToStorage("invoiceUrl", data.pdfUrl);
+      return data;
+    } else {
+      throw new Error("Invalid response from invoice service");
+    }
+  } catch (error) {
+    console.error("Error generating invoice:", error);
+    // Don't throw the error to avoid blocking the success flow
+    // The user should still be redirected even if invoice generation fails
+    return null;
+  }
+}
+
 // Update the doPayment function to include German localization in Elements
 async function doPayment(amount) {
   try {
@@ -762,13 +804,11 @@ async function doPayment(amount) {
       submitButton.disabled = true;
 
       try {
-        const { error } = await stripe.confirmPayment({
+        // Use confirmPayment without return_url to handle success client-side
+        const { error, paymentIntent } = await stripe.confirmPayment({
           elements,
+          redirect: "if_required", // Only redirect if required by payment method
           confirmParams: {
-            return_url: window.location.href.replace(
-              "onboarding",
-              "vielen-dank"
-            ),
             payment_method_data: {
               billing_details: {
                 name: `${userData.firstName} ${userData.lastName}`,
@@ -786,6 +826,32 @@ async function doPayment(amount) {
           // Show error to customer
           errorDiv.style.display = "block";
           errorDiv.textContent = error.message;
+        } else if (paymentIntent && paymentIntent.status === "succeeded") {
+          console.log("Payment succeeded:", paymentIntent);
+          
+          // Store payment success data
+          setToStorage("paymentSuccess", {
+            paymentIntentId: paymentIntent.id,
+            amount: amount,
+            timestamp: new Date().toISOString()
+          });
+
+          // Call the invoice endpoint
+          await handlePurchaseAndInvoice(
+            paymentIntent.id,
+            amount,
+            getFromStorage("createUserResponse", {}).userId
+          );
+
+          // Redirect to success page
+          window.location.href = window.location.href.replace(
+            "onboarding",
+            "vielen-dank"
+          );
+        } else {
+          console.log("Payment requires further action or failed");
+          errorDiv.style.display = "block";
+          errorDiv.textContent = dictionary["error.paymentIncomplete"];
         }
       } catch (error) {
         console.error("Payment error:", error);
@@ -1201,6 +1267,14 @@ document.addEventListener("DOMContentLoaded", function () {
       currentStep--;
       showStep(currentStep);
     }
+  }
+
+  function onSuccessPayment() {
+    
+    window.location.href = window.location.href.replace(
+      "onboarding",
+      "vielen-dank"
+    );
   }
 
   function attachEventListeners() {
