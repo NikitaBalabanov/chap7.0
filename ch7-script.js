@@ -39,6 +39,8 @@ const dictionary = {
 const PUBLISHABLE_KEY =
   "pk_test_51QPhSmIjMlCwpKLpOSWig7J6FCQyFQ5NEysG3mXGy5tzXfZ61wwdGDSU2m6qPO8QwWeUMokteES3SyTUJlqJF6JP00zRyrYPId";
 
+API  = "https://europe-west3-mind-c3055.cloudfunctions.net"
+
 let stripe;
 
 const CURRENCY = "€";
@@ -685,7 +687,7 @@ async function initializeStripe() {
 async function handlePurchaseAndInvoice(paymentIntentId, amount, userId) {
   try {
     const response = await fetch(
-      "https://europe-west3-mind-c3055.cloudfunctions.net/handlePurchaseAndInvoice",
+      `${API_URL}/handlePurchaseAndInvoice`,
       {
         method: "POST",
         headers: {
@@ -716,6 +718,39 @@ async function handlePurchaseAndInvoice(paymentIntentId, amount, userId) {
     console.error("Error generating invoice:", error);
     // Don't throw the error to avoid blocking the success flow
     // The user should still be redirected even if invoice generation fails
+    return null;
+  }
+}
+
+// Function to send welcome email after successful purchase
+async function sendWelcomeEmail(userId, programSlugs) {
+  try {
+    const response = await fetch(
+      `${API_URL}/sendWebWelcomeEmail`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+          programSlugs,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to send welcome email");
+    }
+
+    console.log("Welcome email sent successfully");
+    return data;
+  } catch (error) {
+    console.error("Error sending welcome email:", error);
+    // Don't throw the error to avoid blocking the success flow
+    // The user should still be redirected even if welcome email fails
     return null;
   }
 }
@@ -836,12 +871,19 @@ async function doPayment(amount) {
             timestamp: new Date().toISOString()
           });
 
+          const userId = getFromStorage("createUserResponse", {}).userId;
+          const selectedCourses = getFromStorage("selectedCourses", []);
+          const programSlugs = selectedCourses.map((course) => course.toUpperCase());
+
           // Call the invoice endpoint
           await handlePurchaseAndInvoice(
             paymentIntent.id,
             amount,
-            getFromStorage("createUserResponse", {}).userId
+            userId
           );
+
+          // Send welcome email
+          await sendWelcomeEmail(userId, programSlugs);
 
           // Redirect to success page
           window.location.href = window.location.href.replace(
