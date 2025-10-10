@@ -691,6 +691,7 @@ async function doPayment(amount) {
           elements,
           redirect: "if_required",
           confirmParams: {
+            return_url: window.location.href.replace("onboarding", "vielen-dank"),
             payment_method_data: {
               billing_details: {
                 name: `${userData.firstName} ${userData.lastName}`,
