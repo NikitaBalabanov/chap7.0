@@ -33,6 +33,7 @@ const dictionary = {
   "success.payment": "Zahlung erfolgreich",
   "success.invoice": "Rechnung wurde erstellt und per E-Mail versandt",
   "button.closePayment": "Zahlungsfenster schließen",
+  "error.userExistsNoLocal": "Dieser Benutzer existiert bereits. Bitte beende die Einrichtung in der mobilen App",
 };
 
 const PUBLISHABLE_KEY =
@@ -720,6 +721,8 @@ async function doPayment(amount) {
           await handlePurchaseAndInvoice(paymentIntent.id, amount, userId);
           await sendWelcomeEmail(userId, programSlugs);
 
+          localStorage.removeItem("userId");
+
           window.location.href = window.location.href.replace("onboarding", "vielen-dank");
         } else {
           errorDiv.style.display = "block";
@@ -802,6 +805,19 @@ async function createUser() {
     const data = await response.json();
 
     if (data.success === false && data.message) {
+      if (data.message.includes("The email address is already in use by another account")) {
+        const savedUserId = getFromStorage("userId", null);
+        
+        if (savedUserId) {
+          setToStorage("createUserResponse", { userId: savedUserId, success: true });
+          return { userId: savedUserId, success: true, skippedCreation: true };
+        } else {
+          errorDiv.style.display = "block";
+          errorDiv.textContent = dictionary["error.userExistsNoLocal"];
+          throw new Error(dictionary["error.userExistsNoLocal"]);
+        }
+      }
+      
       errorDiv.style.display = "block";
       errorDiv.textContent = `${data.message}  ${data.error}`;
     }
@@ -1051,17 +1067,59 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  document.addEventListener("click", function (e) {
+    const textEl = e.target.closest(".btn_main_text");
+    if (!textEl) return;
+    const label = textEl.textContent.trim();
+    if (label !== "Jetzt kaufen") return;
+
+    const buttonEl = textEl.closest("button");
+    const linkEl = textEl.closest("a");
+
+    if (buttonEl && !buttonEl.disabled) {
+      buttonEl.disabled = true;
+      buttonEl.classList.add("disabled");
+      buttonEl.setAttribute("aria-disabled", "true");
+    } else if (linkEl) {
+      linkEl.classList.add("disabled");
+      linkEl.setAttribute("aria-disabled", "true");
+      linkEl.style.pointerEvents = "none";
+      linkEl.style.opacity = "0.7";
+    }
+  });
+
   async function handleNextClick(event) {
     event.preventDefault();
+
+    const clickedBtn = event.currentTarget;
+    if (clickedBtn) {
+      clickedBtn.disabled = true;
+      clickedBtn.classList.add("disabled");
+      clickedBtn.setAttribute("aria-disabled", "true");
+    }
+
+    const prevStep = currentStep;
     try {
       const isValid = await isCurrentStepValid();
-      if (!isValid) return;
+      if (!isValid) {
+        if (clickedBtn) {
+          clickedBtn.disabled = false;
+          clickedBtn.classList.remove("disabled");
+          clickedBtn.removeAttribute("aria-disabled");
+        }
+        return;
+      }
       if (currentStep < steps.length - 1) {
         currentStep++;
         showStep(currentStep);
       }
     } catch (error) {
       console.error("Error in handleNextClick:", error);
+      if (clickedBtn) {
+        clickedBtn.disabled = false;
+        clickedBtn.classList.remove("disabled");
+        clickedBtn.removeAttribute("aria-disabled");
+      }
     }
   }
 
@@ -1074,6 +1132,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function attachEventListeners() {
     [...nextBtns, submitBtn].forEach((btn) => {
+      if (!btn) return;
       btn.removeEventListener("click", handleNextClick);
       btn.addEventListener("click", handleNextClick);
     });
@@ -1152,16 +1211,32 @@ async function createTrialUser() {
     });
 
     const data = await response.json();
-    setToStorage("createUserResponse", data);
-    setToStorage("userId", data.userId);
+
+    if (data.success === false && data.message) {
+      if (data.message.includes("The email address is already in use by another account")) {
+        const savedUserId = getFromStorage("userId", null);
+        
+        if (savedUserId) {
+          setToStorage("createUserResponse", { userId: savedUserId, success: true });
+          window.location.href = window.location.href.replace("onboarding", "vielen-dank");
+          return { userId: savedUserId, success: true, skippedCreation: true };
+        } else {
+          errorDiv.style.display = "block";
+          errorDiv.textContent = dictionary["error.userExistsNoLocal"];
+          throw new Error(dictionary["error.userExistsNoLocal"]);
+        }
+      }
+      
+      errorDiv.style.display = "block";
+      errorDiv.textContent = `${data.message}  ${data.error}`;
+    }
 
     if (!response.ok || !data.success) {
-      if (data.message) {
-        errorDiv.style.display = "block";
-        errorDiv.textContent = `${data.message}  ${data.error}`;
-      }
       throw new Error(data.message || "Failed to create trial user");
     }
+
+    setToStorage("createUserResponse", data);
+    setToStorage("userId", data.userId);
 
     window.location.href = window.location.href.replace("onboarding", "vielen-dank");
     return data;
