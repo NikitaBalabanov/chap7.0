@@ -814,6 +814,18 @@ async function doPayment(amount) {
             course.toUpperCase()
           );
 
+          const purchaseBtn =
+            document
+              .querySelector("#registerFormSubmitButton")
+              ?.closest("button") ||
+            document.querySelector("[data-btn-submit]") ||
+            document.querySelector("button:has(.btn_main_text)");
+
+          if (purchaseBtn) {
+            purchaseBtn.disabled = true;
+            purchaseBtn.classList.add("disabled");
+            purchaseBtn.setAttribute("aria-disabled", "true");
+          }
           await handlePurchaseAndInvoice(paymentIntent.id, amount, userId);
           await sendWelcomeEmail(userId, programSlugs);
 
@@ -1203,46 +1215,33 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  document.addEventListener("click", function (e) {
-    const textEl = e.target.closest(".btn_main_text");
-    if (!textEl) return;
-    const label = textEl.textContent.trim();
-    if (label !== "Jetzt kaufen") return;
+  // document.addEventListener("click", function (e) {
+  //   const textEl = e.target.closest(".btn_main_text");
+  //   if (!textEl) return;
+  //   const label = textEl.textContent.trim();
+  //   if (label !== "Jetzt kaufen") return;
 
-    const buttonEl = textEl.closest("button");
-    const linkEl = textEl.closest("a");
+  //   const buttonEl = textEl.closest("button");
+  //   const linkEl = textEl.closest("a");
 
-    if (buttonEl && !buttonEl.disabled) {
-      buttonEl.disabled = true;
-      buttonEl.classList.add("disabled");
-      buttonEl.setAttribute("aria-disabled", "true");
-    } else if (linkEl) {
-      linkEl.classList.add("disabled");
-      linkEl.setAttribute("aria-disabled", "true");
-      linkEl.style.pointerEvents = "none";
-      linkEl.style.opacity = "0.7";
-    }
-  });
+  //   if (buttonEl && !buttonEl.disabled) {
+  //     buttonEl.disabled = true;
+  //     buttonEl.classList.add("disabled");
+  //     buttonEl.setAttribute("aria-disabled", "true");
+  //   } else if (linkEl) {
+  //     linkEl.classList.add("disabled");
+  //     linkEl.setAttribute("aria-disabled", "true");
+  //     linkEl.style.pointerEvents = "none";
+  //     linkEl.style.opacity = "0.7";
+  //   }
+  // });
 
   async function handleNextClick(event) {
     event.preventDefault();
 
-    const clickedBtn = event.currentTarget;
-    if (clickedBtn) {
-      clickedBtn.disabled = true;
-      clickedBtn.classList.add("disabled");
-      clickedBtn.setAttribute("aria-disabled", "true");
-    }
-
-    const prevStep = currentStep;
     try {
       const isValid = await isCurrentStepValid();
       if (!isValid) {
-        if (clickedBtn) {
-          clickedBtn.disabled = false;
-          clickedBtn.classList.remove("disabled");
-          clickedBtn.removeAttribute("aria-disabled");
-        }
         return;
       }
       if (currentStep < steps.length - 1) {
@@ -1251,11 +1250,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     } catch (error) {
       console.error("Error in handleNextClick:", error);
-      if (clickedBtn) {
-        clickedBtn.disabled = false;
-        clickedBtn.classList.remove("disabled");
-        clickedBtn.removeAttribute("aria-disabled");
-      }
     }
   }
 
