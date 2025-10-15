@@ -683,6 +683,10 @@ async function apiSendVerifyEmail(userId) {
   }
 }
 
+/* ---------- modal (create/show/hide) ---------- */
+
+let EVM_INTERVAL = null;
+
 function ensureEmailVerifyModalExists() {
   let modal = document.getElementById("email_verify_modal");
   if (modal) return modal;
@@ -735,78 +739,169 @@ function showEmailVerifyModal() {
   m.querySelector(".evm-backdrop").style.display = "block";
   m.querySelector(".evm-dialog").style.display = "flex";
 }
+
 function hideEmailVerifyModal() {
   const m = document.getElementById("email_verify_modal");
   if (!m) return;
   m.querySelector(".evm-backdrop").style.display = "none";
   m.querySelector(".evm-dialog").style.display = "none";
+
   m.querySelector("#evm_error").style.display = "none";
   m.querySelector("#evm_error").textContent = "";
   m.querySelector("#evm_success").style.display = "none";
   m.querySelector("#evm_success").textContent = "";
   m.querySelector("#evm_actions_initial").style.display = "flex";
   m.querySelector("#evm_actions_after_send").style.display = "none";
+
+  if (EVM_INTERVAL) {
+    clearInterval(EVM_INTERVAL);
+    EVM_INTERVAL = null;
+  }
 }
+
+/* ---------- countdown helper ---------- */
+
+function startResendCountdown(btn, seconds = 60) {
+  const baseLabel = "Nochmals senden";
+  const setLabel = (s) => (btn.textContent = `${baseLabel} (${s})`);
+
+  btn.disabled = true;
+  setLabel(seconds);
+
+  if (EVM_INTERVAL) clearInterval(EVM_INTERVAL);
+  EVM_INTERVAL = setInterval(() => {
+    seconds -= 1;
+    if (seconds <= 0) {
+      clearInterval(EVM_INTERVAL);
+      EVM_INTERVAL = null;
+      btn.disabled = false;
+      btn.textContent = baseLabel;
+      return;
+    }
+    setLabel(seconds);
+  }, 1000);
+}
+
+/* ---------- wire modal logic ---------- */
 
 function wireEmailVerifyModal({ userId, onVerified }) {
   const m = ensureEmailVerifyModalExists();
 
-  ["evm_send","evm_cancel","evm_resend","evm_check","evm_close"].forEach(id=>{
-    const el = m.querySelector(`#${id}`);
-    if (el) {
-      const clone = el.cloneNode(true);
-      el.parentNode.replaceChild(clone, el);
+  ["evm_send", "evm_cancel", "evm_resend", "evm_check", "evm_close"].forEach(
+    (id) => {
+      const el = m.querySelector(`#${id}`);
+      if (el) {
+        const clone = el.cloneNode(true);
+        el.parentNode.replaceChild(clone, el);
+      }
     }
-  });
+  );
 
-  const btnSend   = m.querySelector("#evm_send");
+  const btnSend = m.querySelector("#evm_send");
   const btnCancel = m.querySelector("#evm_cancel");
   const btnResend = m.querySelector("#evm_resend");
-  const btnCheck  = m.querySelector("#evm_check");
-  const btnClose  = m.querySelector("#evm_close");
-  const errBox    = m.querySelector("#evm_error");
-  const okBox     = m.querySelector("#evm_success");
-  const aInit     = m.querySelector("#evm_actions_initial");
-  const aAfter    = m.querySelector("#evm_actions_after_send");
+  const btnCheck = m.querySelector("#evm_check");
+  const btnClose = m.querySelector("#evm_close");
 
-  const showErr = (t)=>{ errBox.textContent=t||""; errBox.style.display=t?"block":"none"; if(t) okBox.style.display="none"; };
-  const showOk  = (t)=>{ okBox.textContent=t||""; okBox.style.display=t?"block":"none"; if(t) errBox.style.display="none"; };
+  const errBox = m.querySelector("#evm_error");
+  const okBox = m.querySelector("#evm_success");
+  const aInit = m.querySelector("#evm_actions_initial");
+  const aAfter = m.querySelector("#evm_actions_after_send");
 
-  btnSend.addEventListener("click", async ()=>{
-    btnSend.disabled = true; showErr(""); showOk("");
+  const showErr = (t) => {
+    errBox.textContent = t || "";
+    errBox.style.display = t ? "block" : "none";
+    if (t) {
+      okBox.style.display = "none";
+      okBox.textContent = "";
+    }
+  };
+  const showOk = (t) => {
+    okBox.textContent = t || "";
+    okBox.style.display = t ? "block" : "none";
+    if (t) {
+      errBox.style.display = "none";
+      errBox.textContent = "";
+    }
+  };
+
+  btnSend.addEventListener("click", async () => {
+    btnSend.disabled = true;
+    showErr("");
+    showOk("");
+
     const ok = await apiSendVerifyEmail(userId);
     btnSend.disabled = false;
-    if (!ok) return showErr("Fehler beim Senden des Bestätigungslinks.");
+
+    if (!ok) {
+      showErr("Fehler beim Senden des Bestätigungslinks.");
+      return;
+    }
+
     aInit.style.display = "none";
     aAfter.style.display = "flex";
-    showOk("Link gesendet. Öffnen Sie die E-Mail und klicken Sie auf den Link.");
+    showOk(
+      "Link gesendet. Öffnen Sie die E-Mail und klicken Sie auf den Link."
+    );
+    startResendCountdown(btnResend, 60);
   });
 
-  btnResend.addEventListener("click", async ()=>{
-    btnResend.disabled = true; showErr(""); showOk("");
+  btnResend.addEventListener("click", async () => {
+    if (btnResend.disabled) return;
+
+    btnResend.disabled = true;
+    showErr("");
+    showOk("");
+
     const ok = await apiSendVerifyEmail(userId);
-    btnResend.disabled = false;
-    if (!ok) return showErr("Fehler beim Senden des Bestätigungslinks.");
+    if (!ok) {
+      btnResend.disabled = false;
+      showErr("Fehler beim Senden des Bestätigungslinks.");
+      return;
+    }
+
     showOk("Link erneut gesendet.");
+    startResendCountdown(btnResend, 60);
   });
 
-  btnCheck.addEventListener("click", async ()=>{
-    btnCheck.disabled = true; showErr(""); showOk("Prüfe Bestätigung…");
+  btnCheck.addEventListener("click", async () => {
+    btnCheck.disabled = true;
+    showErr("");
+    showOk("Prüfe Bestätigung…");
+
     const verified = await apiIsEmailVerified(userId);
     btnCheck.disabled = false;
+
     if (verified) {
       showOk("E-Mail wurde bestätigt. Es geht weiter zur Zahlung …");
       hideEmailVerifyModal();
       if (typeof onVerified === "function") onVerified();
     } else {
-      showErr("E-Mail ist noch nicht bestätigt. Bitte klicken Sie auf den Link in Ihrer E-Mail und versuchen Sie es erneut.");
+      showErr(
+        "E-Mail ist noch nicht bestätigt. Bitte klicken Sie auf den Link in Ihrer E-Mail und versuchen Sie es erneut."
+      );
     }
   });
 
-  btnCancel.addEventListener("click", ()=> hideEmailVerifyModal());
-  btnClose .addEventListener("click", ()=> hideEmailVerifyModal());
+  btnCancel.addEventListener("click", () => hideEmailVerifyModal());
+  btnClose.addEventListener("click", () => hideEmailVerifyModal());
 }
 
+/* ---------- entry point before payment ---------- */
+
+function getUserIdSafe() {
+  const fromCreate = getFromStorage("createUserResponse", null);
+  if (
+    fromCreate &&
+    typeof fromCreate.userId === "string" &&
+    fromCreate.userId.length > 0
+  ) {
+    return fromCreate.userId;
+  }
+  const fromKey = getFromStorage("userId", null);
+  if (typeof fromKey === "string" && fromKey.length > 0) return fromKey;
+  return null;
+}
 
 async function ensureEmailVerifiedThenPay(amount) {
   const userId = getUserIdSafe();
