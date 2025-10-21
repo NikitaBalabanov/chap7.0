@@ -1029,6 +1029,23 @@ async function sendWelcomeEmail(userId, programSlugs) {
   }
 }
 
+async function completeOnboarding(userId) {
+  try {
+    const response = await fetch(`${API}/complete-onboarding`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    const data = await response.json();
+    if (!response.ok)
+      throw new Error(data.message || "Failed to complete onboarding");
+    return data;
+  } catch (error) {
+    console.error("Error completing onboarding:", error);
+    return null;
+  }
+}
+
 async function doPayment(amount) {
   try {
     const registerButtonText = getSiblingButtonBySelector(
@@ -1176,6 +1193,7 @@ async function doPayment(amount) {
 
             await handlePurchaseAndInvoice(paymentIntent.id, amount, userId);
             await sendWelcomeEmail(userId, programSlugs);
+            await completeOnboarding(userId);
 
             localStorage.removeItem("userId");
             window.location.href = window.location.href.replace(
