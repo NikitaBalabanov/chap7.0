@@ -1263,6 +1263,7 @@ async function createUser() {
       password: userData.password,
       dateOfBirth: userData.dateOfBirth,
       namePrefix: userData.namePrefix,
+      newsletterSignUp: userData.newsletterSignUp || false,
       hasPreconditions: hasContraindications,
       healthProvider: {
         maxCoursePrice: healthProviderData.maxCoursePrice || "",
@@ -1448,6 +1449,7 @@ document.addEventListener("DOMContentLoaded", function () {
             email: form.querySelector('input[name="email"]'),
             password: form.querySelector('input[name="password"]'),
             communicationViaEmail: form.querySelector('input[name="communication-via-email"]'),
+            newsletterSignUp: form.querySelector('input[name="newsletter-sign-up"]'),
             privacyPolicy: form.querySelector('input[name="privacyPolicy"]'),
           };
 
@@ -1467,7 +1469,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const value = field.value.trim();
             formData[key] = value;
 
-            if (!value && !["communicationViaEmail", "privacyPolicy"].includes(key)) {
+            if (!value && !["communicationViaEmail", "newsletterSignUp", "privacyPolicy"].includes(key)) {
               field.classList.add("error");
               valid = false;
               switch (key) {
@@ -1533,6 +1535,10 @@ document.addEventListener("DOMContentLoaded", function () {
           });
 
           if (valid) {
+            const newsletterCheckbox = form.querySelector('input[name="newsletter-sign-up"]');
+            if (newsletterCheckbox) {
+              formData.newsletterSignUp = newsletterCheckbox.checked;
+            }
             setToStorage("userData", formData);
             if (getFromStorage("trial", false)) {
               await createTrialUser();
@@ -1701,6 +1707,7 @@ async function createTrialUser() {
       password: userData.password,
       dateOfBirth: userData.dateOfBirth,
       namePrefix: userData.namePrefix,
+      newsletterSignUp: userData.newsletterSignUp || false,
       hasPreconditions: hasContraindications,
       healthProvider: {
         maxCoursePrice: healthProviderData?.maxCoursePrice || "",
