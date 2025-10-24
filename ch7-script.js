@@ -1753,6 +1753,7 @@ async function createTrialUser() {
       namePrefix: userData.namePrefix,
       newsletterSignUp: userData.newsletterSignUp || false,
       hasPreconditions: hasContraindications,
+      isTrial: true,
       healthProvider: {
         maxCoursePrice: healthProviderData?.maxCoursePrice || "",
         name: selectedHealthProvider,
