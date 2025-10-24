@@ -22,6 +22,7 @@ const dictionary = {
   "error.healthProvider": "Bitte wählen Sie eine Krankenkasse aus",
   "error.selectOptions": "Bitte wählen Sie mehr als 1 Option aus",
   "error.tooManyOptions": "Sie können maximal 2 Programme auswählen",
+  "error.selectPrograms": "Bitte wählen Sie mindestens 1 Programm aus",
   "error.agreeToTerms": "Bitte stimmen Sie beiden Bedingungen zu",
   "select.healthProvider": "Bitte Krankenkasse wählen",
   "payment.processing": "Wird bearbeitet ...",
@@ -1368,6 +1369,7 @@ document.addEventListener("DOMContentLoaded", function () {
     2: "#step2",
     3: "#step3",
     4: "#step3",
+    5: "#step3",
   };
 
   function showStep(index) {
@@ -1430,6 +1432,16 @@ document.addEventListener("DOMContentLoaded", function () {
           if (checkboxesStep3.length < 1) {
             valid = false;
             errorMessages.push(dictionary["error.selectOptions"]);
+          }
+          break;
+        }
+        case 3: {
+          const cardResultCheckboxes = document.querySelectorAll(
+            ".card_result_checkbox:checked"
+          );
+          if (cardResultCheckboxes.length < 1) {
+            valid = false;
+            errorMessages.push(dictionary["error.selectPrograms"]);
           }
           break;
         }
@@ -1565,6 +1577,10 @@ document.addEventListener("DOMContentLoaded", function () {
             errorMessageStep2.style.display = "block";
             break;
           case 2:
+            errorMessageStep3.innerHTML = errorMessages.join("<br>");
+            errorMessageStep3.style.display = "block";
+            break;
+          case 3:
             errorMessageStep3.innerHTML = errorMessages.join("<br>");
             errorMessageStep3.style.display = "block";
             break;
