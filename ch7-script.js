@@ -145,13 +145,21 @@ function getSavedCurrentStep() {
 function saveFormData(formData) {
   const existingData = getFromStorage("userData", {});
   const mergedData = { ...existingData, ...formData };
+  if (mergedData.password) {
+    delete mergedData.password;
+  }
   setToStorage("userData", mergedData);
 }
 
 function restoreFormData() {
   const savedData = getFromStorage("userData", {});
   const form = document.getElementById("signUpForm");
-  if (!form || !savedData) return;
+  if (!form || !savedData) {
+    clearPasswordField();
+    return;
+  }
+
+  clearPasswordField();
 
   const fields = {
     namePrefix: form.querySelector('select[name="namePrefix"]'),
@@ -159,14 +167,18 @@ function restoreFormData() {
     lastName: form.querySelector('input[name="lastName"]'),
     dateOfBirth: form.querySelector('input[name="dateOfBirth"]'),
     email: form.querySelector('input[name="email"]'),
-    password: form.querySelector('input[name="password"]'),
     communicationViaEmail: form.querySelector('input[name="communication-via-email"]'),
     newsletterSignUp: form.querySelector('input[name="newsletter-sign-up"]'),
     privacyPolicy: form.querySelector('input[name="privacyPolicy"]'),
   };
 
   if (fields.namePrefix && savedData.namePrefix) {
-    fields.namePrefix.value = savedData.namePrefix;
+    const optionExists = Array.from(fields.namePrefix.options).some(
+      opt => opt.value === savedData.namePrefix
+    );
+    if (optionExists) {
+      fields.namePrefix.value = savedData.namePrefix;
+    }
   }
   if (fields.firstName && savedData.firstName) {
     fields.firstName.value = savedData.firstName;
@@ -180,9 +192,6 @@ function restoreFormData() {
   if (fields.email && savedData.email) {
     fields.email.value = savedData.email;
   }
-  if (fields.password && savedData.password) {
-    fields.password.value = savedData.password;
-  }
   if (fields.communicationViaEmail) {
     fields.communicationViaEmail.checked = savedData.communicationViaEmail !== false;
   }
@@ -192,6 +201,148 @@ function restoreFormData() {
   if (fields.privacyPolicy) {
     fields.privacyPolicy.checked = savedData.privacyPolicy === true;
   }
+}
+
+function clearPasswordField() {
+  const form = document.getElementById("signUpForm");
+  if (!form) return;
+
+  const passwordField = form.querySelector('input[name="password"]');
+  const passwordConfirmField = form.querySelector('input[name="passwordConfirm"]');
+
+  if (passwordField) {
+    passwordField.value = "";
+    passwordField.autocomplete = "new-password";
+    passwordField.setAttribute("data-lpignore", "true");
+    passwordField.setAttribute("data-form-type", "other");
+    passwordField.setAttribute("autocomplete", "new-password");
+    
+    const savedData = getFromStorage("userData", {});
+    if (savedData.password) {
+      delete savedData.password;
+      setToStorage("userData", savedData);
+    }
+  }
+
+  if (passwordConfirmField) {
+    passwordConfirmField.value = "";
+    passwordConfirmField.autocomplete = "new-password";
+    passwordConfirmField.setAttribute("data-lpignore", "true");
+    passwordConfirmField.setAttribute("data-form-type", "other");
+    passwordConfirmField.setAttribute("autocomplete", "new-password");
+  }
+}
+
+function setupPasswordFieldCleanup() {
+  const form = document.getElementById("signUpForm");
+  if (!form) return;
+
+  const passwordField = form.querySelector('input[name="password"]');
+  const passwordConfirmField = form.querySelector('input[name="passwordConfirm"]');
+
+  if (passwordField && !passwordField._cleanupSetup) {
+    passwordField._cleanupSetup = true;
+    let userTyping = false;
+
+    passwordField.addEventListener("input", () => {
+      userTyping = true;
+      const savedData = getFromStorage("userData", {});
+      if (savedData.password) {
+        delete savedData.password;
+        setToStorage("userData", savedData);
+      }
+    });
+
+    passwordField.addEventListener("keydown", () => {
+      userTyping = true;
+    });
+
+    const clearIfAutoFilled = () => {
+      if (!userTyping && passwordField.value) {
+        passwordField.value = "";
+        const savedData = getFromStorage("userData", {});
+        if (savedData.password) {
+          delete savedData.password;
+          setToStorage("userData", savedData);
+        }
+      }
+    };
+
+    passwordField.addEventListener("focus", () => {
+      userTyping = false;
+      setTimeout(clearIfAutoFilled, 100);
+    });
+
+    setTimeout(() => {
+      if (passwordField.value && document.activeElement !== passwordField) {
+        clearIfAutoFilled();
+      }
+    }, 1500);
+  }
+
+  if (passwordConfirmField && !passwordConfirmField._cleanupSetup) {
+    passwordConfirmField._cleanupSetup = true;
+    
+    passwordConfirmField.addEventListener("focus", () => {
+      if (passwordConfirmField.value) {
+        passwordConfirmField.value = "";
+      }
+    });
+  }
+}
+
+function hidePasswordFieldsIfUserExists() {
+  const userId = getUserIdSafe();
+  if (!userId) return;
+
+  const userData = getFromStorage("userData", {});
+  if (userData.password) {
+    delete userData.password;
+    setToStorage("userData", userData);
+  }
+
+  clearPasswordField();
+
+  const form = document.getElementById("signUpForm");
+  if (!form) return;
+
+  const passwordField = form.querySelector('input[name="password"]');
+  const passwordConfirmField = form.querySelector('input[name="passwordConfirm"]');
+  const passwordLabel = passwordField?.closest('.w-form-group') || passwordField?.parentElement;
+  const passwordConfirmLabel = passwordConfirmField?.closest('.w-form-group') || passwordConfirmField?.parentElement;
+
+  if (passwordField && passwordLabel) {
+    passwordLabel.style.display = "none";
+  }
+  if (passwordConfirmField && passwordConfirmLabel) {
+    passwordConfirmLabel.style.display = "none";
+  }
+}
+
+function disableFormFieldsIfUserExists() {
+  const userId = getUserIdSafe();
+  if (!userId) return;
+
+  const form = document.getElementById("signUpForm");
+  if (!form) return;
+
+  const fields = [
+    form.querySelector('select[name="namePrefix"]'),
+    form.querySelector('input[name="firstName"]'),
+    form.querySelector('input[name="lastName"]'),
+    form.querySelector('input[name="dateOfBirth"]'),
+    form.querySelector('input[name="email"]'),
+    form.querySelector('input[name="password"]'),
+    form.querySelector('input[name="communication-via-email"]'),
+    form.querySelector('input[name="newsletter-sign-up"]'),
+    form.querySelector('input[name="privacyPolicy"]'),
+  ];
+
+  fields.forEach((field) => {
+    if (field) {
+      field.disabled = true;
+    }
+  });
 }
 
 function setupFormAutoSave() {
@@ -206,7 +357,6 @@ function setupFormAutoSave() {
     lastName: form.querySelector('input[name="lastName"]'),
     dateOfBirth: form.querySelector('input[name="dateOfBirth"]'),
     email: form.querySelector('input[name="email"]'),
-    password: form.querySelector('input[name="password"]'),
     communicationViaEmail: form.querySelector('input[name="communication-via-email"]'),
     newsletterSignUp: form.querySelector('input[name="newsletter-sign-up"]'),
     privacyPolicy: form.querySelector('input[name="privacyPolicy"]'),
@@ -249,16 +399,26 @@ function onboardingHook({ current, index }) {
     populateContraindications();
     populateNamePrefix().then(() => {
       setTimeout(() => {
+        clearPasswordField();
         restoreFormData();
         setupFormAutoSave();
+        setupPasswordFieldCleanup();
+        hidePasswordFieldsIfUserExists();
+        disableFormFieldsIfUserExists();
       }, 100);
     });
   } else if (index === 5) {
     populateCheckout();
-    setTimeout(() => {
-      restoreFormData();
-      setupFormAutoSave();
-    }, 100);
+    populateNamePrefix().then(() => {
+      setTimeout(() => {
+        clearPasswordField();
+        restoreFormData();
+        setupFormAutoSave();
+        setupPasswordFieldCleanup();
+        hidePasswordFieldsIfUserExists();
+        disableFormFieldsIfUserExists();
+      }, 100);
+    });
   }
 }
 
@@ -1376,6 +1536,7 @@ async function createUser() {
     const errorDiv = document.querySelector("#error_message_step5");
     errorDiv.style.display = "none";
     const userData = getFromStorage("userData", {});
+    const userId = getUserIdSafe();
     const selectedCourses = getFromStorage("selectedCourses", []);
     const recommendedCourses = getFromStorage("recommendedCourses", []);
     const selectedHealthProvider = getFromStorage("selectedHealthProvider", "");
@@ -1406,7 +1567,6 @@ async function createUser() {
       email: userData.email,
       firstName: userData.firstName,
       lastName: userData.lastName,
-      password: userData.password,
       dateOfBirth: userData.dateOfBirth,
       namePrefix: userData.namePrefix,
       newsletterSignUp: userData.newsletterSignUp || false,
@@ -1426,6 +1586,10 @@ async function createUser() {
       },
     };
 
+    if (!userId && userData.password) {
+      payload.password = userData.password;
+    }
+
     setToStorage("createUserPayload", payload);
 
     const response = await fetch(getCreateUserBaseUrl(), {
@@ -1444,6 +1608,10 @@ async function createUser() {
             userId: savedUserId,
             success: true,
           });
+          setTimeout(() => {
+            disableFormFieldsIfUserExists();
+            hidePasswordFieldsIfUserExists();
+          }, 100);
           return { userId: savedUserId, success: true, skippedCreation: true };
         }
         errorDiv.style.display = "block";
@@ -1462,6 +1630,11 @@ async function createUser() {
     setToStorage("createUserResponse", data);
     setToStorage("userId", data.userId);
 
+    setTimeout(() => {
+      disableFormFieldsIfUserExists();
+      hidePasswordFieldsIfUserExists();
+    }, 100);
+
     if (!response.ok) throw new Error(data.message || "Failed to create user");
     return data;
   } catch (error) {
@@ -1473,7 +1646,9 @@ async function createUser() {
 
 async function populateNamePrefix() {
   const namePrefixSelect = document.querySelector('select[name="namePrefix"]');
-  if (!namePrefixSelect) return;
+  if (!namePrefixSelect) return Promise.resolve();
+  
+  const savedValue = getFromStorage("userData", {})?.namePrefix || "";
   
   const response = await fetch(getNamePrefixes());
   const data = await response.json();
@@ -1489,6 +1664,10 @@ async function populateNamePrefix() {
     option.textContent = text;
     namePrefixSelect.appendChild(option);
   });
+  
+  if (savedValue && prefixes[savedValue]) {
+    namePrefixSelect.value = savedValue;
+  }
   
   return Promise.resolve();
 }
@@ -1605,13 +1784,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         case 5: {
           const form = document.getElementById("signUpForm");
+          const userId = getUserIdSafe();
           const fields = {
             namePrefix: form.querySelector('select[name="namePrefix"]'),
             firstName: form.querySelector('input[name="firstName"]'),
             lastName: form.querySelector('input[name="lastName"]'),
             dateOfBirth: form.querySelector('input[name="dateOfBirth"]'),
             email: form.querySelector('input[name="email"]'),
-            password: form.querySelector('input[name="password"]'),
+            password: userId ? null : form.querySelector('input[name="password"]'),
             communicationViaEmail: form.querySelector('input[name="communication-via-email"]'),
             newsletterSignUp: form.querySelector('input[name="newsletter-sign-up"]'),
             privacyPolicy: form.querySelector('input[name="privacyPolicy"]'),
@@ -1624,6 +1804,9 @@ document.addEventListener("DOMContentLoaded", function () {
           const formData = {};
           Object.entries(fields).forEach(([key, field]) => {
             if (!field) {
+              if (key === "password" && userId) {
+                return;
+              }
               console.error(`Field ${key} not found`);
               valid = false;
               errorMessages.push(dictionary["error.requiredFields"]);
@@ -1653,7 +1836,9 @@ document.addEventListener("DOMContentLoaded", function () {
                   errorMessages.push(dictionary["error.email"]);
                   break;
                 case "password":
-                  errorMessages.push(dictionary["error.password"]);
+                  if (!userId) {
+                    errorMessages.push(dictionary["error.password"]);
+                  }
                   break;
               }
             }
@@ -1667,7 +1852,7 @@ document.addEventListener("DOMContentLoaded", function () {
               }
             }
 
-            if (key === "password" && value && value.length < 6) {
+            if (key === "password" && value && value.length < 6 && !userId) {
               field.classList.add("error");
               valid = false;
               errorMessages.push(dictionary["error.passwordLength"]);
@@ -1702,6 +1887,9 @@ document.addEventListener("DOMContentLoaded", function () {
             const newsletterCheckbox = form.querySelector('input[name="newsletter-sign-up"]');
             if (newsletterCheckbox) {
               formData.newsletterSignUp = newsletterCheckbox.checked;
+            }
+            if (userId && formData.password) {
+              delete formData.password;
             }
             saveFormData(formData);
             if (getFromStorage("trial", false)) {
@@ -1827,11 +2015,35 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  const userData = getFromStorage("userData", {});
+  if (userData.password) {
+    delete userData.password;
+    setToStorage("userData", userData);
+  }
+
   fetchHealthProviders();
   fetchOnboardingSurvey();
   attachEventListeners();
   preventUncheckingCommunicationEmail();
   showStep(currentStep);
+
+  setTimeout(() => {
+    clearPasswordField();
+    setupPasswordFieldCleanup();
+  }, 500);
+
+  const observer = new MutationObserver(() => {
+    const passwordField = document.querySelector('input[name="password"]');
+    if (passwordField && !passwordField._cleanupSetup) {
+      setupPasswordFieldCleanup();
+      clearPasswordField();
+    }
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
 });
 
 /* -------------------- trial user -------------------- */
@@ -1840,6 +2052,7 @@ async function createTrialUser() {
     const errorDiv = document.querySelector("#error_message_step5");
     errorDiv.style.display = "none";
     const userData = getFromStorage("userData", {});
+    const userId = getUserIdSafe();
     const selectedCourses = getFromStorage("selectedCourses", []);
     const recommendedCourses = getFromStorage("recommendedCourses", []);
     const selectedHealthProvider = getFromStorage("selectedHealthProvider", "");
@@ -1860,7 +2073,6 @@ async function createTrialUser() {
       email: userData.email,
       firstName: userData.firstName,
       lastName: userData.lastName,
-      password: userData.password,
       dateOfBirth: userData.dateOfBirth,
       namePrefix: userData.namePrefix,
       newsletterSignUp: userData.newsletterSignUp || false,
@@ -1881,6 +2093,10 @@ async function createTrialUser() {
       },
     };
 
+    if (!userId && userData.password) {
+      payload.password = userData.password;
+    }
+
     setToStorage("createUserPayload", payload);
 
     const response = await fetch(getCreateUserBaseUrl(), {
@@ -1899,6 +2115,10 @@ async function createTrialUser() {
             userId: savedUserId,
             success: true,
           });
+          setTimeout(() => {
+            disableFormFieldsIfUserExists();
+            hidePasswordFieldsIfUserExists();
+          }, 100);
           await ensureEmailVerifiedThenCompleteTrial();
           return { userId: savedUserId, success: true, skippedCreation: true };
         }
@@ -1928,6 +2148,11 @@ async function createTrialUser() {
 
     setToStorage("createUserResponse", data);
     setToStorage("userId", data.userId);
+
+    setTimeout(() => {
+      disableFormFieldsIfUserExists();
+      hidePasswordFieldsIfUserExists();
+    }, 100);
 
     await ensureEmailVerifiedThenCompleteTrial();
     return data;
