@@ -170,6 +170,55 @@ function getUserIdSafe() {
   return null;
 }
 
+function getUrlParameter(name) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(name);
+}
+
+async function triggerFormSubmissionFlow() {
+  const form = document.getElementById("signUpForm");
+  if (!form) {
+    console.warn("Form not found, waiting...");
+    setTimeout(triggerFormSubmissionFlow, 500);
+    return;
+  }
+
+  const userData = getFromStorage("userData", {});
+  if (!userData.email || !userData.firstName || !userData.lastName) {
+    console.warn("Form data not complete, cannot auto-submit");
+    return;
+  }
+
+  const buttonText = getSubmitButtonText();
+  if (buttonText && !buttonText.getAttribute("data-original-text")) {
+    buttonText.setAttribute("data-original-text", buttonText.textContent);
+  }
+
+  setSubmitButtonLoading(true);
+
+  try {
+    const userId = getUserIdSafe();
+    const formData = { ...userData };
+    
+    if (userId && formData.password) {
+      delete formData.password;
+    }
+    
+    saveFormData(formData);
+
+    if (getFromStorage("trial", false)) {
+      await createTrialUser();
+      return;
+    }
+
+    await createUser();
+    await ensureEmailVerifiedThenPay(calculateTotalPrice());
+  } catch (error) {
+    console.error("Auto-submit error:", error);
+    setSubmitButtonLoading(false);
+  }
+}
+
 function saveCurrentStep(stepIndex) {
   setToStorage("currentStep", stepIndex);
 }
@@ -2161,6 +2210,27 @@ document.addEventListener("DOMContentLoaded", function () {
     childList: true,
     subtree: true
   });
+
+  const emailVerified = getUrlParameter("email-verified");
+  if (emailVerified === "true" && window.location.pathname.includes("/onboarding")) {
+    setTimeout(async () => {
+      const currentStep = getSavedCurrentStep();
+      if (currentStep >= 5) {
+        await triggerFormSubmissionFlow();
+      } else {
+        const steps = document.querySelectorAll(
+          ".form_step_wrap .form_step, .form_step_popup"
+        );
+        if (steps.length > 5) {
+          const savedStep = getSavedCurrentStep();
+          showStep(Math.max(5, savedStep));
+          setTimeout(async () => {
+            await triggerFormSubmissionFlow();
+          }, 1000);
+        }
+      }
+    }, 1500);
+  }
 });
 
 /* -------------------- trial user -------------------- */
