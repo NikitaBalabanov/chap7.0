@@ -65,6 +65,43 @@ function getSiblingButtonBySelector(selector, childSelector) {
   return parent.querySelector(childSelector);
 }
 
+function getSubmitButton() {
+  const button = document.querySelector("[data-btn-submit]") ||
+                 document.querySelector("#registerFormSubmitButton")?.closest("button") ||
+                 document.querySelector("button:has(.btn_main_text)");
+  return button;
+}
+
+function getSubmitButtonText() {
+  return getSiblingButtonBySelector("#registerFormSubmitButton", ".btn_main_text");
+}
+
+function setSubmitButtonLoading(loading) {
+  const button = getSubmitButton();
+  const buttonText = getSubmitButtonText();
+  
+  if (button) {
+    if (loading) {
+      button.disabled = true;
+      button.classList.add("disabled");
+      button.setAttribute("aria-disabled", "true");
+    } else {
+      button.disabled = false;
+      button.classList.remove("disabled");
+      button.removeAttribute("aria-disabled");
+    }
+  }
+  
+  if (buttonText) {
+    if (loading) {
+      buttonText.textContent = dictionary["payment.processing"];
+    } else {
+      const originalText = buttonText.getAttribute("data-original-text") || dictionary["payment.payNow"];
+      buttonText.textContent = originalText;
+    }
+  }
+}
+
 function getDocumentFromFireBase(document) {
   return `${API}/getConfigData?document=${document}`;
 }
@@ -1236,8 +1273,18 @@ function wireEmailVerifyModal({ userId, onVerified }) {
     }
   });
 
-  btnCancel.addEventListener("click", () => hideEmailVerifyModal());
-  btnClose.addEventListener("click", () => hideEmailVerifyModal());
+  btnCancel.addEventListener("click", () => {
+    hideEmailVerifyModal();
+    if (typeof onCancel === "function") {
+      onCancel();
+    }
+  });
+  btnClose.addEventListener("click", () => {
+    hideEmailVerifyModal();
+    if (typeof onCancel === "function") {
+      onCancel();
+    }
+  });
 }
 
 /* ---------- entry point before payment ---------- */
@@ -1265,20 +1312,32 @@ async function ensureEmailVerifiedThenPay(amount) {
       errDiv.style.display = "block";
       errDiv.textContent = "Unbekannter Fehler: Benutzer nicht gefunden.";
     }
+    setSubmitButtonLoading(false);
     return;
   }
 
-  const verified = await apiIsEmailVerified(userId);
-  if (verified) {
-    await doPayment(amount);
-    return;
-  }
+  try {
+    const verified = await apiIsEmailVerified(userId);
+    if (verified) {
+      await doPayment(amount);
+      return;
+    }
 
-  wireEmailVerifyModal({
-    userId,
-    onVerified: () => doPayment(amount),
-  });
-  showEmailVerifyModal();
+    wireEmailVerifyModal({
+      userId,
+      onVerified: () => {
+        doPayment(amount);
+      },
+      onCancel: () => {
+        setSubmitButtonLoading(false);
+      }
+    });
+    showEmailVerifyModal();
+  } catch (error) {
+    console.error("Email verification error:", error);
+    setSubmitButtonLoading(false);
+    throw error;
+  }
 }
 
 async function ensureEmailVerifiedThenCompleteTrial() {
@@ -1290,32 +1349,42 @@ async function ensureEmailVerifiedThenCompleteTrial() {
       errDiv.style.display = "block";
       errDiv.textContent = "Unbekannter Fehler: Benutzer nicht gefunden.";
     }
+    setSubmitButtonLoading(false);
     return;
   }
 
-  const verified = await apiIsEmailVerified(userId);
-  if (verified) {
-    await completeOnboarding(userId, true);
-    localStorage.removeItem("userId");
-    window.location.href = window.location.href.replace(
-      "onboarding",
-      "vielen-dank"
-    );
-    return;
-  }
-
-  wireEmailVerifyModal({
-    userId,
-    onVerified: async () => {
+  try {
+    const verified = await apiIsEmailVerified(userId);
+    if (verified) {
       await completeOnboarding(userId, true);
       localStorage.removeItem("userId");
       window.location.href = window.location.href.replace(
         "onboarding",
         "vielen-dank"
       );
-    },
-  });
-  showEmailVerifyModal();
+      return;
+    }
+
+    wireEmailVerifyModal({
+      userId,
+      onVerified: async () => {
+        await completeOnboarding(userId, true);
+        localStorage.removeItem("userId");
+        window.location.href = window.location.href.replace(
+          "onboarding",
+          "vielen-dank"
+        );
+      },
+      onCancel: () => {
+        setSubmitButtonLoading(false);
+      }
+    });
+    showEmailVerifyModal();
+  } catch (error) {
+    console.error("Email verification error:", error);
+    setSubmitButtonLoading(false);
+    throw error;
+  }
 }
 /* -------------------- stripe -------------------- */
 async function initializeStripe() {
@@ -1388,12 +1457,7 @@ async function completeOnboarding(userId, isTrial = false) {
 
 async function doPayment(amount) {
   try {
-    const registerButtonText = getSiblingButtonBySelector(
-      "#registerFormSubmitButton",
-      ".btn_main_text"
-    );
-    if (registerButtonText)
-      registerButtonText.textContent = dictionary["payment.processing"];
+    setSubmitButtonLoading(true);
     const errorDiv = document.querySelector("#error_message_payment");
 
     if (!stripe) await initializeStripe();
@@ -1470,8 +1534,7 @@ async function doPayment(amount) {
         e.preventDefault();
         popupWrap.classList.remove("active");
         popupWrap.style.display = "none";
-        if (registerButtonText)
-          registerButtonText.textContent = dictionary["payment.payNow"];
+        setSubmitButtonLoading(false);
       };
     }
 
@@ -1560,6 +1623,7 @@ async function doPayment(amount) {
     );
   } catch (error) {
     console.error(dictionary["error.payment"], error);
+    setSubmitButtonLoading(false);
     throw error;
   }
 }
@@ -1923,20 +1987,34 @@ document.addEventListener("DOMContentLoaded", function () {
           });
 
           if (valid) {
-            const newsletterCheckbox = form.querySelector('input[name="newsletter-sign-up"]');
-            if (newsletterCheckbox) {
-              formData.newsletterSignUp = newsletterCheckbox.checked;
+            const buttonText = getSubmitButtonText();
+            if (buttonText && !buttonText.getAttribute("data-original-text")) {
+              buttonText.setAttribute("data-original-text", buttonText.textContent);
             }
-            if (userId && formData.password) {
-              delete formData.password;
+            
+            setSubmitButtonLoading(true);
+            
+            try {
+              const newsletterCheckbox = form.querySelector('input[name="newsletter-sign-up"]');
+              if (newsletterCheckbox) {
+                formData.newsletterSignUp = newsletterCheckbox.checked;
+              }
+              if (userId && formData.password) {
+                delete formData.password;
+              }
+              saveFormData(formData);
+              
+              if (getFromStorage("trial", false)) {
+                await createTrialUser();
+                return;
+              }
+              
+              await createUser();
+              await ensureEmailVerifiedThenPay(calculateTotalPrice());
+            } catch (error) {
+              setSubmitButtonLoading(false);
+              throw error;
             }
-            saveFormData(formData);
-            if (getFromStorage("trial", false)) {
-              await createTrialUser();
-              return;
-            }
-            await createUser();
-            await ensureEmailVerifiedThenPay(calculateTotalPrice());
           }
           break;
         }
