@@ -188,7 +188,7 @@ function createFullscreenLoader() {
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 10000;
+    z-index: 9990;
   `;
 
   const spinner = document.createElement("div");
@@ -1426,20 +1426,18 @@ async function ensureEmailVerifiedThenPay(amount, showLoader = false) {
   try {
     const verified = await apiIsEmailVerified(userId);
     if (verified) {
-      if (showLoader) hideFullscreenLoader();
-      await doPayment(amount);
+      await doPayment(amount, showLoader);
       return;
     }
-
-    if (showLoader) hideFullscreenLoader();
 
     wireEmailVerifyModal({
       userId,
       onVerified: () => {
-        doPayment(amount);
+        doPayment(amount, showLoader);
       },
       onCancel: () => {
         setSubmitButtonLoading(false);
+        if (showLoader) hideFullscreenLoader();
       }
     });
     showEmailVerifyModal();
@@ -1468,8 +1466,8 @@ async function ensureEmailVerifiedThenCompleteTrial(showLoader = false) {
   try {
     const verified = await apiIsEmailVerified(userId);
     if (verified) {
-      if (showLoader) hideFullscreenLoader();
       await completeOnboarding(userId, true);
+      if (showLoader) hideFullscreenLoader();
       localStorage.removeItem("userId");
       window.location.href = window.location.href.replace(
         "onboarding",
@@ -1478,12 +1476,11 @@ async function ensureEmailVerifiedThenCompleteTrial(showLoader = false) {
       return;
     }
 
-    if (showLoader) hideFullscreenLoader();
-
     wireEmailVerifyModal({
       userId,
       onVerified: async () => {
         await completeOnboarding(userId, true);
+        if (showLoader) hideFullscreenLoader();
         localStorage.removeItem("userId");
         window.location.href = window.location.href.replace(
           "onboarding",
@@ -1492,6 +1489,7 @@ async function ensureEmailVerifiedThenCompleteTrial(showLoader = false) {
       },
       onCancel: () => {
         setSubmitButtonLoading(false);
+        if (showLoader) hideFullscreenLoader();
       }
     });
     showEmailVerifyModal();
@@ -1571,7 +1569,7 @@ async function completeOnboarding(userId, isTrial = false) {
   }
 }
 
-async function doPayment(amount) {
+async function doPayment(amount, showLoader = false) {
   try {
     setSubmitButtonLoading(true);
     const errorDiv = document.querySelector("#error_message_payment");
@@ -1614,6 +1612,8 @@ async function doPayment(amount) {
     if (mountEl) mountEl.innerHTML = "";
 
     const paymentElement = elements.create("payment");
+
+    if (showLoader) hideFullscreenLoader();
 
     const popupWrap = document.querySelector("#payment_popup_wrapper");
     popupWrap.classList.add("active");
@@ -1714,6 +1714,7 @@ async function doPayment(amount) {
             await sendWelcomeEmail(userId, programSlugs);
             await completeOnboarding(userId);
 
+            if (showLoader) hideFullscreenLoader();
             localStorage.removeItem("userId");
             window.location.href = window.location.href.replace(
               "onboarding",
@@ -1740,6 +1741,7 @@ async function doPayment(amount) {
   } catch (error) {
     console.error(dictionary["error.payment"], error);
     setSubmitButtonLoading(false);
+    if (showLoader) hideFullscreenLoader();
     throw error;
   }
 }
