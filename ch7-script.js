@@ -319,6 +319,24 @@ function getSavedCurrentStep() {
   return typeof saved === "number" && saved >= 0 ? saved : 0;
 }
 
+function clearSurveyResults() {
+  const keysToRemove = [
+    "onboardingSurveyAnswers_1",
+    "onboardingSurveyAnswers_2",
+    "SurveyAnswersCourseTypes",
+    "recommendedCourses",
+    "selectedCourses",
+  ];
+
+  keysToRemove.forEach((key) => {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn(`Failed to remove ${key} from localStorage:`, e);
+    }
+  });
+}
+
 function saveFormData(formData) {
   const existingData = getFromStorage("userData", {});
   const mergedData = { ...existingData, ...formData };
@@ -2270,6 +2288,17 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     const popupCloseBtn = document.querySelector("#popupClose");
     if (popupCloseBtn) popupCloseBtn.addEventListener("click", handlePrevClick);
+    
+    const surveyAgainBtn = document.querySelector("#do-survey-again");
+    if (surveyAgainBtn) {
+      surveyAgainBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        clearSurveyResults();
+        currentStep = 1;
+        saveCurrentStep(1);
+        showStep(1);
+      });
+    }
   }
 
   function preventUncheckingCommunicationEmail() {
