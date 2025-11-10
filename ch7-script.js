@@ -2325,6 +2325,17 @@ document.addEventListener("DOMContentLoaded", function () {
   preventUncheckingCommunicationEmail();
   showStep(currentStep);
 
+  const backToOnboarding = document.getElementById("back-to-onboarding");
+  if (backToOnboarding) {
+    backToOnboarding.addEventListener("click", (event) => {
+      event.preventDefault();
+      localStorage.removeItem("userData");
+      currentStep = 4;
+      saveCurrentStep(4);
+      showStep(currentStep);
+    });
+  }
+
   setTimeout(() => {
     clearPasswordField();
     setupPasswordFieldCleanup();
