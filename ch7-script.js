@@ -2330,8 +2330,8 @@ document.addEventListener("DOMContentLoaded", function () {
     backToOnboarding.addEventListener("click", (event) => {
       event.preventDefault();
       localStorage.removeItem("userData");
-      currentStep = 4;
-      saveCurrentStep(4);
+      currentStep = 3;
+      saveCurrentStep(3);
       showStep(currentStep);
     });
   }
