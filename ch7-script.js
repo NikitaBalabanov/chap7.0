@@ -1761,11 +1761,11 @@ async function doPayment(amount, showLoader = false) {
               purchaseBtn.classList.add("disabled");
               purchaseBtn.setAttribute("aria-disabled", "true");
             }
-
+            console.log("functions started");
             await handlePurchaseAndInvoice(paymentIntent.id, amount, userId);
             await sendWelcomeEmail(userId, programSlugs);
             await completeOnboarding(userId);
-
+            console.log("functions completed");
             if (showLoader) hideFullscreenLoader();
             clearLocalStorageAfterPayment();
             window.location.href = window.location.href.replace(
