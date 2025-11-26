@@ -1860,7 +1860,7 @@ async function createUser() {
     const selectedCourses = getFromStorage("selectedCourses", []);
     const recommendedCourses = getFromStorage("recommendedCourses", []);
     const selectedHealthProvider = getFromStorage("selectedHealthProvider", "");
-    const healthProviders = getFromStorage("healthProviders", {});
+    const healthProvidersFromStorage = getFromStorage("healthProviders", {});
     const onboardingSurveyAnswers_1 = getFromStorage(
       "onboardingSurveyAnswers_1",
       []
@@ -1880,7 +1880,13 @@ async function createUser() {
       };
     });
 
-    const healthProviderData = healthProviders[selectedHealthProvider];
+    const allHealthProviders =
+      (healthProvidersFromStorage &&
+        Object.keys(healthProvidersFromStorage).length > 0 &&
+        healthProvidersFromStorage) ||
+      HP_FULL ||
+      {};
+    const healthProviderData = allHealthProviders[selectedHealthProvider] || {};
     const hasContraindications = getFilteredContraindications().length > 0;
 
     const payload = {
@@ -1892,10 +1898,10 @@ async function createUser() {
       newsletterSignUp: userData.newsletterSignUp || false,
       hasPreconditions: hasContraindications,
       healthProvider: {
-        maxCoursePrice: healthProviderData.maxCoursePrice || "",
+        maxCoursePrice: healthProviderData?.maxCoursePrice || "",
         name: selectedHealthProvider,
         numberOfCourses: recommendedCourses.length.toString(),
-        takeover: healthProviderData.takeover || "",
+        takeover: healthProviderData?.takeover || "",
       },
       selectedCourses: selectedCourses.map((course) => course.toUpperCase()),
       onboarding: {
