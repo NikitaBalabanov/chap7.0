@@ -556,6 +556,57 @@ function disableFormFieldsIfUserExists() {
   });
 }
 
+function resetSignupFormState() {
+  const form = document.getElementById("signUpForm");
+  if (!form) return;
+
+  const fields = [
+    form.querySelector('select[name="namePrefix"]'),
+    form.querySelector('input[name="firstName"]'),
+    form.querySelector('input[name="lastName"]'),
+    form.querySelector('input[name="dateOfBirth"]'),
+    form.querySelector('input[name="email"]'),
+    form.querySelector('input[name="password"]'),
+    form.querySelector('input[name="passwordConfirm"]'),
+    form.querySelector('input[name="communication-via-email"]'),
+    form.querySelector('input[name="newsletter-sign-up"]'),
+    form.querySelector('input[name="privacyPolicy"]'),
+  ];
+
+  fields.forEach((field) => {
+    if (!field) return;
+    field.disabled = false;
+    field.classList.remove("error");
+    if (field.type === "checkbox") {
+      field.checked = false;
+    } else {
+      field.value = "";
+    }
+  });
+
+  const passwordField = form.querySelector('input[name="password"]');
+  const passwordConfirmField = form.querySelector(
+    'input[name="passwordConfirm"]'
+  );
+  const passwordLabel =
+    passwordField?.closest(".w-form-group") || passwordField?.parentElement;
+  const passwordConfirmLabel =
+    passwordConfirmField?.closest(".w-form-group") ||
+    passwordConfirmField?.parentElement;
+
+  if (passwordLabel) passwordLabel.style.display = "";
+  if (passwordConfirmLabel) passwordConfirmLabel.style.display = "";
+
+  clearPasswordField();
+}
+
+function resetCheckoutView() {
+  const productList = document.querySelector("#productList");
+  if (productList) productList.innerHTML = "";
+  const totalContainer = document.querySelector("#priceTotal");
+  if (totalContainer) totalContainer.innerHTML = "";
+}
+
 function setupFormAutoSave() {
   const form = document.getElementById("signUpForm");
   if (!form || form._autoSaveSetup) return;
@@ -2331,6 +2382,8 @@ document.addEventListener("DOMContentLoaded", function () {
     backToOnboarding.addEventListener("click", (event) => {
       event.preventDefault();
       clearLocalStorageAfterPayment();
+      resetSignupFormState();
+      resetCheckoutView();
       currentStep = 0;
       saveCurrentStep(0);
       showStep(currentStep);
