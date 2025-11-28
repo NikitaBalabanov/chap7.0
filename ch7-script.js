@@ -17,7 +17,7 @@ const dictionary = {
   "error.passwordLength": "Dein Passwort muss mindestens 6 Zeichen lang sein",
   "error.ageRestriction": "Du musst mindestens 18 Jahre alt sein",
   "error.termsAndConditions": "Bitte stimme den Nutzungsbedingungen zu",
-  "error.privacyPolicy": "Bitte stimme der Datenschutzerklärung zu",
+  "error.privacyPolicy": "Bitte stimme den AGB zu",
   "error.requiredFields": "Bitte fülle alle erforderlichen Felder aus",
   "error.healthProvider": "Bitte wähle deine Krankenkasse aus",
   "error.selectOptions": "Bitte wähle mehr als eine Option aus",
