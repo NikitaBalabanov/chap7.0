@@ -56,6 +56,7 @@ let stripe;
 
 const CURRENCY = "€";
 const DEFAULT_CHECKMARK_COLOR = "#E5E7EB";
+const PAYMENT_MODAL_HEIGHT = 640;
 
 /* -------------------- utils -------------------- */
 function getSiblingButtonBySelector(selector, childSelector) {
@@ -100,6 +101,20 @@ function setSubmitButtonLoading(loading) {
       const originalText = buttonText.getAttribute("data-original-text") || dictionary["payment.payNow"];
       buttonText.textContent = originalText;
     }
+  }
+}
+
+function setPaymentModalSizing(wrapper, container) {
+  const target = `${PAYMENT_MODAL_HEIGHT}px`;
+  if (wrapper) {
+    wrapper.style.alignItems = "center";
+    wrapper.style.justifyContent = "center";
+  }
+  if (container) {
+    container.style.height = target;
+    container.style.maxHeight = target;
+    container.style.minHeight = target;
+    container.style.overflowY = "auto";
   }
 }
 
@@ -1739,6 +1754,7 @@ async function doPayment(amount, showLoader = false) {
     const paymentGatewayContainer = document.querySelector(
       ".payment_gateway_contain"
     );
+    setPaymentModalSizing(popupWrap, paymentGatewayContainer);
     let closePaymentLink = document.getElementById("close_payment_window");
     if (!closePaymentLink && paymentGatewayContainer) {
       const wrapper = document.createElement("div");
