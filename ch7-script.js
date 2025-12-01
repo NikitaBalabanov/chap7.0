@@ -56,7 +56,7 @@ let stripe;
 
 const CURRENCY = "€";
 const DEFAULT_CHECKMARK_COLOR = "#E5E7EB";
-const PAYMENT_MODAL_HEIGHT = 640;
+const PAYMENT_MODAL_HEIGHT = 720;
 
 /* -------------------- utils -------------------- */
 function getSiblingButtonBySelector(selector, childSelector) {
@@ -107,8 +107,8 @@ function setSubmitButtonLoading(loading) {
 function setPaymentModalSizing(wrapper, container) {
   const viewportHeight = window.innerHeight || PAYMENT_MODAL_HEIGHT;
   const computedHeight = Math.max(
-    320,
-    Math.min(PAYMENT_MODAL_HEIGHT, viewportHeight - 64)
+    400,
+    Math.min(PAYMENT_MODAL_HEIGHT, viewportHeight - 32)
   );
   const target = `${computedHeight}px`;
   if (wrapper) {
@@ -116,7 +116,7 @@ function setPaymentModalSizing(wrapper, container) {
     wrapper.style.inset = "0";
     wrapper.style.alignItems = "center";
     wrapper.style.justifyContent = "center";
-    wrapper.style.padding = "32px 16px";
+    wrapper.style.padding = "12px 8px";
     wrapper.style.boxSizing = "border-box";
     wrapper.style.overflow = "hidden";
     wrapper.style.zIndex = "10000";
@@ -126,7 +126,7 @@ function setPaymentModalSizing(wrapper, container) {
     container.style.height = target;
     container.style.maxHeight = target;
     container.style.minHeight = target;
-    container.style.width = "min(420px, calc(100vw - 32px))";
+    container.style.width = "min(480px, calc(100vw - 16px))";
     container.style.margin = "0 auto";
     container.style.overflowY = "auto";
     container.style.overflowX = "hidden";
@@ -135,12 +135,16 @@ function setPaymentModalSizing(wrapper, container) {
     container.style.position = "relative";
     container.style.display = "flex";
     container.style.flexDirection = "column";
+    container.style.padding = "16px";
+    container.style.boxSizing = "border-box";
   }
   const paymentElement = document.getElementById("payment_element");
   if (paymentElement) {
     paymentElement.style.maxHeight = "100%";
     paymentElement.style.overflowY = "auto";
     paymentElement.style.overflowX = "hidden";
+    paymentElement.style.flex = "1";
+    paymentElement.style.minHeight = "0";
   }
 }
 
@@ -1790,6 +1794,8 @@ async function doPayment(amount, showLoader = false) {
         if (stripeForm) {
           stripeForm.style.maxHeight = "100%";
           stripeForm.style.overflowY = "auto";
+          stripeForm.style.padding = "0";
+          stripeForm.style.margin = "0";
         }
       }
     }, 500);
@@ -1804,6 +1810,8 @@ async function doPayment(amount, showLoader = false) {
           if (stripeForm) {
             stripeForm.style.maxHeight = "100%";
             stripeForm.style.overflowY = "auto";
+            stripeForm.style.padding = "0";
+            stripeForm.style.margin = "0";
           }
         }
       });
