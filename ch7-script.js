@@ -278,7 +278,6 @@ function clearLocalStorageAfterPayment() {
   const keysToRemove = [
     "currentStep",
     "userData",
-    "healthProviders",
     "selectedHealthProvider",
     "pricing",
     "contraindications",
@@ -686,6 +685,10 @@ function setupFormAutoSave() {
 /* -------------------- flow hooks -------------------- */
 function onboardingHook({ current, index }) {
   if (index === 0) {
+    const healthProviders = getFromStorage("healthProviders", {});
+    if (!healthProviders || Object.keys(healthProviders).length === 0) {
+      fetchHealthProviders();
+    }
     fetchPricing();
     fetchContraindications();
     fetchCourses();
@@ -1076,9 +1079,9 @@ function fillSummaryData() {
   const takeoverSummary = document.querySelector("#takeoverSummary");
   const selectedHealthProvider = getFromStorage("selectedHealthProvider", "");
   const healthProviders = getFromStorage("healthProviders", {});
-  if (takeoverSummary && selectedHealthProvider)
+  if (takeoverSummary && selectedHealthProvider && healthProviders[selectedHealthProvider])
     takeoverSummary.innerHTML =
-      healthProviders[selectedHealthProvider].takeover;
+      healthProviders[selectedHealthProvider].takeover || "";
 
   const price = document.querySelector("#price");
   if (price) price.innerHTML = calculateTotalPrice() + CURRENCY;
@@ -1848,13 +1851,18 @@ async function doPayment(amount, showLoader = false) {
       };
     }
 
+    let isPaymentProcessing = false;
+    
     submitButton.addEventListener(
       "click",
       async (event) => {
+        if (isPaymentProcessing) return;
+        
         if (submitButtonText)
           submitButtonText.textContent = dictionary["payment.processing"];
         event.preventDefault();
         submitButton.disabled = true;
+        isPaymentProcessing = true;
 
         try {
           const { error, paymentIntent } = await stripe.confirmPayment({
@@ -1879,6 +1887,11 @@ async function doPayment(amount, showLoader = false) {
             console.error("Payment failed:", error);
             errorDiv.style.display = "block";
             errorDiv.textContent = error.message;
+            isPaymentProcessing = false;
+            if (submitButtonText)
+              submitButtonText.textContent = dictionary["payment.payNow"];
+            submitButton.disabled = false;
+            return;
           } else if (
             paymentIntent &&
             (paymentIntent.status === "succeeded" ||
@@ -1928,23 +1941,26 @@ async function doPayment(amount, showLoader = false) {
               "onboarding",
               "vielen-dank"
             );
+            return;
           } else {
             errorDiv.style.display = "block";
             errorDiv.textContent = dictionary["error.paymentIncomplete"];
+            isPaymentProcessing = false;
+            if (submitButtonText)
+              submitButtonText.textContent = dictionary["payment.payNow"];
+            submitButton.disabled = false;
+            return;
           }
         } catch (error) {
           console.error("Payment error:", error);
           errorDiv.style.display = "block";
           errorDiv.textContent = error?.message ?? error.toString();
-        } finally {
-          if (registerButtonText)
-            registerButtonText.textContent = dictionary["payment.payNow"];
+          isPaymentProcessing = false;
           if (submitButtonText)
             submitButtonText.textContent = dictionary["payment.payNow"];
           submitButton.disabled = false;
         }
-      },
-      { once: true }
+      }
     );
   } catch (error) {
     console.error(dictionary["error.payment"], error);
@@ -2498,6 +2514,7 @@ document.addEventListener("DOMContentLoaded", function () {
       resetCheckoutView();
       currentStep = 0;
       saveCurrentStep(0);
+      fetchHealthProviders();
       showStep(currentStep);
     });
   }
