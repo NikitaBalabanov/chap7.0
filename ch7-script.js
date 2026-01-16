@@ -1432,7 +1432,7 @@ function startResendCountdown(btn, seconds = 60) {
 
 /* ---------- wire modal logic ---------- */
 
-function wireEmailVerifyModal({ userId, onVerified }) {
+function wireEmailVerifyModal({ userId, onVerified, onCancel }) {
   const m = ensureEmailVerifyModalExists();
 
   ["evm_send", "evm_cancel", "evm_resend", "evm_close"].forEach(
@@ -1511,18 +1511,29 @@ function wireEmailVerifyModal({ userId, onVerified }) {
     startResendCountdown(btnResend, 60);
   });
 
-  btnCancel.addEventListener("click", () => {
+  const handleCancel = () => {
     hideEmailVerifyModal();
     if (typeof onCancel === "function") {
       onCancel();
     }
-  });
-  btnClose.addEventListener("click", () => {
-    hideEmailVerifyModal();
-    if (typeof onCancel === "function") {
-      onCancel();
+  };
+
+  btnCancel.addEventListener("click", handleCancel);
+  btnClose.addEventListener("click", handleCancel);
+
+  const backdrop = m.querySelector(".evm-backdrop");
+  if (backdrop) {
+    const oldHandler = backdrop._cancelHandler;
+    if (oldHandler) {
+      backdrop.removeEventListener("click", oldHandler);
     }
-  });
+    backdrop._cancelHandler = (e) => {
+      if (e.target === backdrop) {
+        handleCancel();
+      }
+    };
+    backdrop.addEventListener("click", backdrop._cancelHandler);
+  }
 }
 
 /* ---------- entry point before payment ---------- */
