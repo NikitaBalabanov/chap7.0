@@ -42,7 +42,7 @@ export const dictionary = {
 export const PUBLISHABLE_KEY =
   "pk_live_51QPhSmIjMlCwpKLp1WUFFigtGme2DlhNm5Q92hVgaOXZ9LykdGitlL5TV4PyaMjO2rJcG2T22G5bdCYCis5KwnQs00AcDCV5VD";
 
-export const API = window.API || "https://europe-west3-preneo-production.cloudfunctions.net";
+export const API = "https://europe-west3-preneo-production.cloudfunctions.net/webflowAPI";
 export const API_URL = API;
 export const CURRENCY = "€";
 export const DEFAULT_CHECKMARK_COLOR = "#E5E7EB";
