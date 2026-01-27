@@ -60,7 +60,7 @@ const CURRENCY = "€";
 const DEFAULT_CHECKMARK_COLOR = "#E5E7EB";
 const PAYMENT_MODAL_HEIGHT = 720;
 
-/* -------------------- utils -------------------- */
+/* -------------------- utils ---------------------- */
 function getSiblingButtonBySelector(selector, childSelector) {
   const el = document.querySelector(selector);
   if (!el) return null;
