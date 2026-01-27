@@ -20,7 +20,7 @@ async function initializeStripe() {
 
 export async function handlePurchaseAndInvoice(paymentIntentId, amount, userId) {
   try {
-    const response = await fetch(`${API_URL}/handlePurchaseAndInvoice`, {
+    const response = await fetch(`https://europe-west3-preneo-production.cloudfunctions.net/handlePurchaseAndInvoice`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ paymentIntentId, amount, userId }),
@@ -40,9 +40,9 @@ export async function handlePurchaseAndInvoice(paymentIntentId, amount, userId) 
   }
 }
 
-export async function sendWelcomeEmail(userId, programSlugs) {
+export async function sendWebWelcomeEmail(userId, programSlugs) {
   try {
-    const response = await fetch(`${API_URL}/sendWebWelcomeEmail`, {
+    const response = await fetch(`https://europe-west3-preneo-production.cloudfunctions.net/sendWebWelcomeEmail`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, programSlugs }),
@@ -302,7 +302,7 @@ export async function doPayment(amount, showLoader = false) {
             if (isSucceeded) {
               console.log("functions started");
               await handlePurchaseAndInvoice(paymentIntent.id, amount, userId);
-              await sendWelcomeEmail(userId, programSlugs);
+              await sendWebWelcomeEmail(userId, programSlugs);
               await completeOnboarding(userId);
               console.log("functions completed");
             } else if (isProcessing) {
