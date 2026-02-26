@@ -259,6 +259,10 @@ export async function triggerFormSubmissionFlow(showLoader = false) {
   try {
     const userId = getUserIdSafe();
     const formData = { ...userData };
+    const passwordField = form.querySelector('input[name="password"]');
+    const passwordForSubmission = !userId
+      ? passwordField?.value?.trim() || null
+      : null;
     
     if (userId && formData.password) {
       delete formData.password;
@@ -267,11 +271,11 @@ export async function triggerFormSubmissionFlow(showLoader = false) {
     saveFormData(formData);
 
     if (getFromStorage("trial", false)) {
-      await createTrialUser(showLoader);
+      await createTrialUser(showLoader, passwordForSubmission);
       return;
     }
 
-    await createUser();
+    await createUser(passwordForSubmission);
     await ensureEmailVerifiedThenPay(calculateTotalPrice(), showLoader);
   } catch (error) {
     console.error("Auto-submit error:", error);

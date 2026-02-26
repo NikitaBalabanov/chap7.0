@@ -7,7 +7,7 @@ import { getFilteredContraindications } from './pricing.js';
 import { getHpFull } from './healthProviders.js';
 import { ensureEmailVerifiedThenCompleteTrial } from './stripe.js';
 
-export async function createUser() {
+export async function createUser(passwordOverride = null) {
   try {
     const errorDiv = document.querySelector("#error_message_step5");
     errorDiv.style.display = "none";
@@ -68,8 +68,13 @@ export async function createUser() {
       },
     };
 
-    if (!userId && userData.password) {
-      payload.password = userData.password;
+    const password =
+      typeof passwordOverride === "string" && passwordOverride.length > 0
+        ? passwordOverride
+        : userData.password;
+
+    if (!userId && password) {
+      payload.password = password;
     }
 
     setToStorage("createUserPayload", payload);
@@ -126,7 +131,7 @@ export async function createUser() {
   }
 }
 
-export async function createTrialUser(showLoader = false) {
+export async function createTrialUser(showLoader = false, passwordOverride = null) {
   try {
     const errorDiv = document.querySelector("#error_message_step5");
     errorDiv.style.display = "none";
@@ -172,8 +177,13 @@ export async function createTrialUser(showLoader = false) {
       },
     };
 
-    if (!userId && userData.password) {
-      payload.password = userData.password;
+    const password =
+      typeof passwordOverride === "string" && passwordOverride.length > 0
+        ? passwordOverride
+        : userData.password;
+
+    if (!userId && password) {
+      payload.password = password;
     }
 
     setToStorage("createUserPayload", payload);

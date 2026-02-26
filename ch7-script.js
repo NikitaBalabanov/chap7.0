@@ -340,14 +340,15 @@ document.addEventListener("DOMContentLoaded", function () {
               if (userId && formData.password) {
                 delete formData.password;
               }
+              const passwordForSubmission = !userId ? formData.password : null;
               saveFormData(formData);
               
               if (getFromStorage("trial", false)) {
-                await createTrialUser();
+                await createTrialUser(false, passwordForSubmission);
                 return;
               }
               
-              await createUser();
+              await createUser(passwordForSubmission);
               await ensureEmailVerifiedThenPay(calculateTotalPrice());
             } catch (error) {
               setSubmitButtonLoading(false);
