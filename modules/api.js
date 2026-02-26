@@ -16,14 +16,6 @@ export function getWebflowStory(slug) {
   return `${API}/getWebflowStory?slug=${slug}&draft=true`;
 }
 
-export function getVerifyEmailUrl() {
-  return `${API}/verify-email`;
-}
-
-export function getIsEmailVerifiedUrl(userId) {
-  return `${API}/is-email-verified?userId=${encodeURIComponent(userId)}`;
-}
-
 export function getHealthProviderKeysUrl() {
   return `${API}/getConfigData?document=healthInsuranceProviders&view=keys`;
 }

@@ -9,8 +9,6 @@ import {
 } from './modules/storage.js';
 import { 
   getUserIdSafe, 
-  getUrlParameter, 
-  removeUrlParameter,
   getSubmitButtonText,
   setSubmitButtonLoading
 } from './modules/utils.js';
@@ -42,7 +40,6 @@ import {
   disableFormFieldsIfUserExists,
   resetSignupFormState,
   setupFormAutoSave,
-  triggerFormSubmissionFlow
 } from './modules/formHandlers.js';
 
 function onboardingHook({ current, index }) {
@@ -479,7 +476,6 @@ document.addEventListener("DOMContentLoaded", function () {
   if (backToOnboarding) {
     backToOnboarding.addEventListener("click", (event) => {
       event.preventDefault();
-      removeUrlParameter("email-verified");
       clearLocalStorageAfterPayment();
       resetSignupFormState();
       resetCheckoutView();
@@ -507,25 +503,4 @@ document.addEventListener("DOMContentLoaded", function () {
     childList: true,
     subtree: true
   });
-
-  const emailVerified = getUrlParameter("email-verified");
-  if (emailVerified === "true" && window.location.pathname.includes("/onboarding")) {
-    setTimeout(async () => {
-      const currentStep = getSavedCurrentStep();
-      if (currentStep >= 5) {
-        await triggerFormSubmissionFlow(true);
-      } else {
-        const steps = document.querySelectorAll(
-          ".form_step_wrap .form_step, .form_step_popup"
-        );
-        if (steps.length > 5) {
-          const savedStep = getSavedCurrentStep();
-          showStep(Math.max(5, savedStep));
-          setTimeout(async () => {
-            await triggerFormSubmissionFlow(true);
-          }, 1000);
-        }
-      }
-    }, 1500);
-  }
 });

@@ -2,7 +2,6 @@ import { dictionary, PUBLISHABLE_KEY, API_URL, API } from './config.js';
 import { getFromStorage, setToStorage, clearLocalStorageAfterPayment } from './storage.js';
 import { getSiblingButtonBySelector, setSubmitButtonLoading, setPaymentModalSizing, getUserIdSafe } from './utils.js';
 import { showFullscreenLoader, hideFullscreenLoader } from './loader.js';
-import { apiIsEmailVerified, wireEmailVerifyModal, showEmailVerifyModal } from './emailVerification.js';
 
 let stripe = null;
 
@@ -347,7 +346,7 @@ export async function doPayment(amount, showLoader = false) {
 export async function ensureEmailVerifiedThenPay(amount, showLoader = false) {
   const userId = getUserIdSafe();
   if (!userId) {
-    console.error("No userId found for email verification.");
+    console.error("No userId found.");
     const errDiv = document.querySelector("#error_message_step5");
     if (errDiv) {
       errDiv.style.display = "block";
@@ -359,25 +358,9 @@ export async function ensureEmailVerifiedThenPay(amount, showLoader = false) {
   }
 
   try {
-    const verified = await apiIsEmailVerified(userId);
-    if (verified) {
-      await doPayment(amount, showLoader);
-      return;
-    }
-
-    wireEmailVerifyModal({
-      userId,
-      onVerified: () => {
-        doPayment(amount, true);
-      },
-      onCancel: () => {
-        setSubmitButtonLoading(false);
-        if (showLoader) hideFullscreenLoader();
-      }
-    });
-    showEmailVerifyModal();
+    await doPayment(amount, showLoader);
   } catch (error) {
-    console.error("Email verification error:", error);
+    console.error("Payment flow error:", error);
     setSubmitButtonLoading(false);
     if (showLoader) hideFullscreenLoader();
     throw error;
@@ -387,7 +370,7 @@ export async function ensureEmailVerifiedThenPay(amount, showLoader = false) {
 export async function ensureEmailVerifiedThenCompleteTrial(showLoader = false) {
   const userId = getUserIdSafe();
   if (!userId) {
-    console.error("No userId found for email verification.");
+    console.error("No userId found.");
     const errDiv = document.querySelector("#error_message_step5");
     if (errDiv) {
       errDiv.style.display = "block";
@@ -399,37 +382,15 @@ export async function ensureEmailVerifiedThenCompleteTrial(showLoader = false) {
   }
 
   try {
-    const verified = await apiIsEmailVerified(userId);
-    if (verified) {
-      await completeOnboarding(userId, true);
-      if (showLoader) hideFullscreenLoader();
-      clearLocalStorageAfterPayment();
-      window.location.href = window.location.href.replace(
-        "onboarding",
-        "vielen-dank"
-      );
-      return;
-    }
-
-    wireEmailVerifyModal({
-      userId,
-      onVerified: async () => {
-        await completeOnboarding(userId, true);
-        if (showLoader) hideFullscreenLoader();
-        clearLocalStorageAfterPayment();
-        window.location.href = window.location.href.replace(
-          "onboarding",
-          "vielen-dank"
-        );
-      },
-      onCancel: () => {
-        setSubmitButtonLoading(false);
-        if (showLoader) hideFullscreenLoader();
-      }
-    });
-    showEmailVerifyModal();
+    await completeOnboarding(userId, true);
+    if (showLoader) hideFullscreenLoader();
+    clearLocalStorageAfterPayment();
+    window.location.href = window.location.href.replace(
+      "onboarding",
+      "vielen-dank"
+    );
   } catch (error) {
-    console.error("Email verification error:", error);
+    console.error("Trial completion error:", error);
     setSubmitButtonLoading(false);
     if (showLoader) hideFullscreenLoader();
     throw error;
