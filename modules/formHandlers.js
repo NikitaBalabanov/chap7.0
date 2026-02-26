@@ -209,7 +209,6 @@ export function setupFormAutoSave() {
 
     if (field.type === "checkbox") {
       field.addEventListener("change", () => {
-        syncWebflowCheckbox(field);
         saveFormData({ [key]: field.checked });
       });
     } else {
