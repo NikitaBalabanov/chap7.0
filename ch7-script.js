@@ -10,7 +10,8 @@ import {
 import { 
   getUserIdSafe, 
   getSubmitButtonText,
-  setSubmitButtonLoading
+  setSubmitButtonLoading,
+  syncWebflowCheckbox
 } from './modules/utils.js';
 import { fetchHealthProviders } from './modules/healthProviders.js';
 import { 
@@ -89,11 +90,11 @@ function onboardingHook({ current, index }) {
             
             if (communicationCheckbox && savedData.communicationViaEmail !== false) {
               communicationCheckbox.checked = true;
-              communicationCheckbox.setAttribute("checked", "checked");
+              syncWebflowCheckbox(communicationCheckbox);
             }
             if (privacyCheckbox && savedData.privacyPolicy === true) {
               privacyCheckbox.checked = true;
-              privacyCheckbox.setAttribute("checked", "checked");
+              syncWebflowCheckbox(privacyCheckbox);
             }
           }
         }, 50);

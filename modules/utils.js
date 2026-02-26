@@ -173,6 +173,19 @@ export function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
+export function syncWebflowCheckbox(input) {
+  if (!input) return;
+  const wrapper = input.closest('.w-checkbox');
+  if (!wrapper) return;
+  const visual = wrapper.querySelector('.w-checkbox-input');
+  if (!visual) return;
+  if (input.checked) {
+    visual.classList.add('w--redirected-checked');
+  } else {
+    visual.classList.remove('w--redirected-checked');
+  }
+}
+
 export function clearPasswordField() {
   const form = document.getElementById("signUpForm");
   if (!form) return;

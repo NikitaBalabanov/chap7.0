@@ -5,7 +5,8 @@ import {
   setSubmitButtonLoading,
   clearPasswordField,
   disableFormFieldsIfUserExists,
-  hidePasswordFieldsIfUserExists
+  hidePasswordFieldsIfUserExists,
+  syncWebflowCheckbox
 } from './utils.js';
 import { hideFullscreenLoader } from './loader.js';
 import { calculateTotalPrice } from './checkout.js';
@@ -67,26 +68,17 @@ export function restoreFormData() {
   if (fields.communicationViaEmail) {
     const shouldBeChecked = savedData.communicationViaEmail !== false;
     fields.communicationViaEmail.checked = shouldBeChecked;
-    if (shouldBeChecked) {
-      fields.communicationViaEmail.setAttribute("checked", "checked");
-      fields.communicationViaEmail.dispatchEvent(new Event("change", { bubbles: true }));
-    }
+    syncWebflowCheckbox(fields.communicationViaEmail);
   }
   if (fields.newsletterSignUp) {
     const shouldBeChecked = savedData.newsletterSignUp === true;
     fields.newsletterSignUp.checked = shouldBeChecked;
-    if (shouldBeChecked) {
-      fields.newsletterSignUp.setAttribute("checked", "checked");
-      fields.newsletterSignUp.dispatchEvent(new Event("change", { bubbles: true }));
-    }
+    syncWebflowCheckbox(fields.newsletterSignUp);
   }
   if (fields.privacyPolicy) {
     const shouldBeChecked = savedData.privacyPolicy === true;
     fields.privacyPolicy.checked = shouldBeChecked;
-    if (shouldBeChecked) {
-      fields.privacyPolicy.setAttribute("checked", "checked");
-      fields.privacyPolicy.dispatchEvent(new Event("change", { bubbles: true }));
-    }
+    syncWebflowCheckbox(fields.privacyPolicy);
   }
 }
 
@@ -173,6 +165,7 @@ export function resetSignupFormState() {
     field.classList.remove("error");
     if (field.type === "checkbox") {
       field.checked = false;
+      syncWebflowCheckbox(field);
     } else {
       field.value = "";
     }
@@ -216,6 +209,7 @@ export function setupFormAutoSave() {
 
     if (field.type === "checkbox") {
       field.addEventListener("change", () => {
+        syncWebflowCheckbox(field);
         saveFormData({ [key]: field.checked });
       });
     } else {
