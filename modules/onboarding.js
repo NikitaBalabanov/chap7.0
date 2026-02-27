@@ -171,11 +171,31 @@ export function recommendCourses() {
 export function fillSummaryData() {
   setToStorage("trial", false);
   const takeoverSummary = document.querySelector("#takeoverSummary");
+  const reimbursementMenuItem = document.querySelector(
+    "#health-insurance-reimbursement-menu-item"
+  );
   const selectedHealthProvider = getFromStorage("selectedHealthProvider", "");
   const healthProviders = getFromStorage("healthProviders", {});
-  if (takeoverSummary && selectedHealthProvider && healthProviders[selectedHealthProvider])
-    takeoverSummary.innerHTML =
-      healthProviders[selectedHealthProvider].takeover || "";
+  const isOtherProvider = selectedHealthProvider === "Other";
+
+  if (takeoverSummary) {
+    takeoverSummary.style.display = isOtherProvider ? "none" : "";
+    if (isOtherProvider) {
+      takeoverSummary.innerHTML = "";
+    } else if (selectedHealthProvider && healthProviders[selectedHealthProvider]) {
+      takeoverSummary.innerHTML =
+        healthProviders[selectedHealthProvider].takeover || "";
+    }
+  }
+
+  if (reimbursementMenuItem) {
+    reimbursementMenuItem.style.display = isOtherProvider ? "none" : "";
+  }
+  document
+    .querySelectorAll("#hide-if-no-health-provider")
+    .forEach((el) => {
+      el.style.display = "none";
+    });
 
   const price = document.querySelector("#price");
   if (price) price.innerHTML = calculateTotalPrice() + CURRENCY;
