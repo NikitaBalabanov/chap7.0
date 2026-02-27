@@ -241,7 +241,7 @@ export function applyHealthProviderVisibilityRules() {
       el.style.display = isOtherProvider ? "none" : "";
     });
 
-  document.querySelectorAll("#hide-if-no-health-provider").forEach((el) => {
+  document.querySelectorAll(".hide-if-no-health-provider").forEach((el) => {
     el.style.display = "none";
   });
 }
