@@ -5,6 +5,8 @@ import { escapeHtml, updateInfoBox } from './utils.js';
 
 let HP_FULL = null;
 let HP_FULL_PROMISE = null;
+const OTHER_DISCLAIMER_TEXT =
+  "Leider hat deine Krankenversicherung keine Partnerschaft mit uns. Setz dich mit deiner Krankenkasse in Verbindung, um ihre Erstattungsrichtlinien zu verstehen.";
 
 export function getHpFull() {
   return HP_FULL;
@@ -33,6 +35,7 @@ export async function fetchHealthProviders() {
       if (dataFull?.success && dataFull?.data) {
         HP_FULL = dataFull.data;
         setToStorage("healthProviders", HP_FULL);
+        populateDropdown(providers, { dropdown, disclaimer });
       }
       return HP_FULL;
     })();
@@ -53,11 +56,52 @@ export async function fetchHealthProviders() {
   }
 }
 
+function getProviderDisplayName(providerKey, hpAll) {
+  const name = hpAll?.[providerKey]?.name;
+  if (typeof name === "string" && name.trim()) {
+    return name.trim();
+  }
+  return providerKey;
+}
+
+function moveOtherToEnd(providers) {
+  const list = Array.isArray(providers) ? [...providers] : [];
+  const regular = list.filter((key) => key !== "Other");
+  const others = list.filter((key) => key === "Other");
+  return [...regular, ...others];
+}
+
+function updateDisclaimer(disclaimer, selectedProvider) {
+  if (!disclaimer) return;
+
+  if (!disclaimer.dataset.defaultText) {
+    disclaimer.dataset.defaultText = (disclaimer.textContent || "").trim();
+  }
+
+  if (!selectedProvider) {
+    disclaimer.style.visibility = "hidden";
+    disclaimer.textContent = disclaimer.dataset.defaultText || "";
+    return;
+  }
+
+  disclaimer.style.visibility = "visible";
+  if (selectedProvider === "Other") {
+    disclaimer.textContent = OTHER_DISCLAIMER_TEXT;
+  } else {
+    disclaimer.textContent = disclaimer.dataset.defaultText || "";
+  }
+}
+
 function populateDropdown(providers, { dropdown, disclaimer }) {
   const opts = [`<option value="">${dictionary["select.healthProvider"]}</option>`];
-  for (let i = 0; i < providers.length; i++) {
-    const p = providers[i];
-    opts.push(`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`);
+  const hpAll = HP_FULL || getFromStorage("healthProviders", {}) || {};
+  const orderedProviders = moveOtherToEnd(providers);
+  for (let i = 0; i < orderedProviders.length; i++) {
+    const p = orderedProviders[i];
+    const label = getProviderDisplayName(p, hpAll);
+    opts.push(
+      `<option value="${escapeHtml(p)}">${escapeHtml(label)}</option>`
+    );
   }
   dropdown.innerHTML = opts.join("");
   dropdown.disabled = false;
@@ -67,10 +111,7 @@ function populateDropdown(providers, { dropdown, disclaimer }) {
 
   async function handleDropdownChange(e) {
     const selectedProvider = e.target.value || "";
-
-    if (disclaimer) {
-      disclaimer.style.visibility = selectedProvider ? "visible" : "hidden";
-    }
+    updateDisclaimer(disclaimer, selectedProvider);
 
     if (!HP_FULL && HP_FULL_PROMISE) {
       try { await HP_FULL_PROMISE; } catch(_) {}
@@ -95,10 +136,10 @@ function populateDropdown(providers, { dropdown, disclaimer }) {
       const hp = (HP_FULL || getFromStorage("healthProviders", {}))[saved] || {};
       const takeoverEl = document.querySelector("#takeover");
       if (takeoverEl) takeoverEl.innerHTML = hp?.takeover || "";
-      if (disclaimer) disclaimer.style.visibility = "visible";
+      updateDisclaimer(disclaimer, saved);
       updateInfoBox(saved);
     })();
   } else {
-    if (disclaimer) disclaimer.style.visibility = "hidden";
+    updateDisclaimer(disclaimer, "");
   }
 }
