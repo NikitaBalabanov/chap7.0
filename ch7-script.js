@@ -27,7 +27,8 @@ import {
   getStep2Answers,
   recommendCourses,
   populateSummary,
-  populateContraindications
+  populateContraindications,
+  applyHealthProviderVisibilityRules
 } from './modules/onboarding.js';
 import { populateCheckout, calculateTotalPrice, resetCheckoutView } from './modules/checkout.js';
 import { ensureEmailVerifiedThenPay } from './modules/stripe.js';
@@ -42,6 +43,43 @@ import {
   resetSignupFormState,
   setupFormAutoSave,
 } from './modules/formHandlers.js';
+
+let healthProviderVisibilityObserver = null;
+
+function applyHealthProviderVisibilityWithRetries() {
+  applyHealthProviderVisibilityRules();
+  requestAnimationFrame(() => applyHealthProviderVisibilityRules());
+  setTimeout(() => applyHealthProviderVisibilityRules(), 100);
+  setTimeout(() => applyHealthProviderVisibilityRules(), 250);
+}
+
+function startHealthProviderVisibilityObserver() {
+  if (healthProviderVisibilityObserver) {
+    healthProviderVisibilityObserver.disconnect();
+  }
+
+  let scheduled = false;
+  healthProviderVisibilityObserver = new MutationObserver(() => {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      applyHealthProviderVisibilityRules();
+    });
+  });
+
+  healthProviderVisibilityObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  setTimeout(() => {
+    if (healthProviderVisibilityObserver) {
+      healthProviderVisibilityObserver.disconnect();
+      healthProviderVisibilityObserver = null;
+    }
+  }, 2000);
+}
 
 function onboardingHook({ current, index }) {
   if (index === 0) {
@@ -62,6 +100,7 @@ function onboardingHook({ current, index }) {
     getStep2Answers();
     recommendCourses();
     populateSummary();
+    applyHealthProviderVisibilityWithRetries();
   } else if (index === 4) {
     populateContraindications();
     populateNamePrefix().then(() => {
@@ -76,6 +115,8 @@ function onboardingHook({ current, index }) {
     });
   } else if (index === 5) {
     populateCheckout();
+    applyHealthProviderVisibilityWithRetries();
+    startHealthProviderVisibilityObserver();
     populateNamePrefix().then(() => {
       setTimeout(() => {
         clearPasswordField();
@@ -97,12 +138,14 @@ function onboardingHook({ current, index }) {
               syncWebflowCheckbox(privacyCheckbox);
             }
           }
+          applyHealthProviderVisibilityWithRetries();
         }, 50);
         
         setupFormAutoSave();
         setupPasswordFieldCleanup();
         hidePasswordFieldsIfUserExists();
         disableFormFieldsIfUserExists();
+        applyHealthProviderVisibilityWithRetries();
       }, 100);
     });
   }
@@ -155,6 +198,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     saveCurrentStep(index);
     onboardingHook({ steps: steps, current: steps[index], index: index });
+    if (index >= 3) {
+      applyHealthProviderVisibilityWithRetries();
+    }
   }
 
   async function isCurrentStepValid() {

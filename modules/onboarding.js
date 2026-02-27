@@ -170,32 +170,7 @@ export function recommendCourses() {
 
 export function fillSummaryData() {
   setToStorage("trial", false);
-  const takeoverSummary = document.querySelector("#takeoverSummary");
-  const reimbursementMenuItem = document.querySelector(
-    "#health-insurance-reimbursement-menu-item"
-  );
-  const selectedHealthProvider = getFromStorage("selectedHealthProvider", "");
-  const healthProviders = getFromStorage("healthProviders", {});
-  const isOtherProvider = selectedHealthProvider === "Other";
-
-  if (takeoverSummary) {
-    takeoverSummary.style.display = isOtherProvider ? "none" : "";
-    if (isOtherProvider) {
-      takeoverSummary.innerHTML = "";
-    } else if (selectedHealthProvider && healthProviders[selectedHealthProvider]) {
-      takeoverSummary.innerHTML =
-        healthProviders[selectedHealthProvider].takeover || "";
-    }
-  }
-
-  if (reimbursementMenuItem) {
-    reimbursementMenuItem.style.display = isOtherProvider ? "none" : "";
-  }
-  document
-    .querySelectorAll("#hide-if-no-health-provider")
-    .forEach((el) => {
-      el.style.display = "none";
-    });
+  applyHealthProviderVisibilityRules();
 
   const price = document.querySelector("#price");
   if (price) price.innerHTML = calculateTotalPrice() + CURRENCY;
@@ -238,6 +213,37 @@ export function fillSummaryData() {
   if (trialButton) {
     trialButton.addEventListener("click", () => setToStorage("trial", true));
   }
+}
+
+export function applyHealthProviderVisibilityRules() {
+  const selectedHealthProviderRaw = getFromStorage("selectedHealthProvider", "");
+  const selectedHealthProvider =
+    typeof selectedHealthProviderRaw === "string"
+      ? selectedHealthProviderRaw.trim()
+      : "";
+  const healthProviders = getFromStorage("healthProviders", {});
+  const isOtherProvider = selectedHealthProvider.toLowerCase() === "other";
+  const takeoverText =
+    !isOtherProvider &&
+    selectedHealthProvider &&
+    healthProviders[selectedHealthProvider]
+      ? healthProviders[selectedHealthProvider].takeover || ""
+      : "";
+
+  document.querySelectorAll("#takeoverSummary").forEach((el) => {
+    el.style.display = isOtherProvider ? "none" : "";
+    el.innerHTML = takeoverText;
+  });
+
+  document
+    .querySelectorAll("#health-insurance-reimbursement-menu-item")
+    .forEach((el) => {
+      el.style.display = isOtherProvider ? "none" : "";
+    });
+
+  document.querySelectorAll("#hide-if-no-health-provider").forEach((el) => {
+    el.style.display = "none";
+  });
 }
 
 export function populateContraindications() {
