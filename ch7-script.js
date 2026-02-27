@@ -46,6 +46,14 @@ import {
 
 let healthProviderVisibilityObserver = null;
 
+function ensureHideNoHealthProviderClassStyle() {
+  if (document.getElementById("hide-no-health-provider-style")) return;
+  const style = document.createElement("style");
+  style.id = "hide-no-health-provider-style";
+  style.textContent = ".hide-if-no-health-provider{display:none !important;}";
+  document.head.appendChild(style);
+}
+
 function applyHealthProviderVisibilityWithRetries() {
   applyHealthProviderVisibilityRules();
   requestAnimationFrame(() => applyHealthProviderVisibilityRules());
@@ -152,6 +160,7 @@ function onboardingHook({ current, index }) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  ensureHideNoHealthProviderClassStyle();
   const steps = document.querySelectorAll(
     ".form_step_wrap .form_step, .form_step_popup"
   );
