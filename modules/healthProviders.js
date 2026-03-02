@@ -161,10 +161,8 @@ function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
   }
   disclaimer.style.visibility = "visible";
   if (isPartner) {
-    disclaimer.style.whiteSpace = "normal";
-    disclaimer.innerHTML = PARTNER_DISCLAIMER_TEXT(partnerName)
-      .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
-      .join("");
+    disclaimer.style.whiteSpace = "pre-line";
+    disclaimer.textContent = PARTNER_DISCLAIMER_TEXT(partnerName).join("\n\n");
   } else if (selectedProvider === "Other") {
     disclaimer.style.whiteSpace = "";
     disclaimer.textContent = OTHER_DISCLAIMER_TEXT;
