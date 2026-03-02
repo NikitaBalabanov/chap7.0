@@ -9,10 +9,10 @@ let HP_PARTNERS = null;
 let HP_PARTNERS_PROMISE = null;
 const OTHER_DISCLAIMER_TEXT =
   "Leider hat deine Krankenversicherung keine Partnerschaft mit uns. Setz dich mit deiner Krankenkasse in Verbindung, um ihre Erstattungsrichtlinien zu verstehen.";
-const PARTNER_DISCLAIMER_TEXT = (partnerName) =>
-  `Dank unserer Partnerschaft mit deiner Krankenkasse${partnerName ? ` (${partnerName})` : ""} kannst du deinen kostenlosen Zugang zu den Preneo-Programmen mit deiner Versichertennummer freischalten.
-
-Zu Abrechnungszwecken wird Preneo meine Versichertennummer einmalig zur Überprüfung an meine Krankenversicherung übermitteln. Zur Bestätigung des Leistungsanspruchs wird die Krankenversicherung den Status meiner Versicherung an Preneo zurückmelden.`;
+const PARTNER_DISCLAIMER_TEXT = (partnerName) => [
+  `Dank unserer Partnerschaft mit deiner Krankenkasse${partnerName ? ` (${partnerName})` : ""} kannst du deinen kostenlosen Zugang zu den Preneo-Programmen mit deiner Versichertennummer freischalten.`,
+  "Zu Abrechnungszwecken wird Preneo meine Versichertennummer einmalig zur Überprüfung an meine Krankenversicherung übermitteln. Zur Bestätigung des Leistungsanspruchs wird die Krankenversicherung den Status meiner Versicherung an Preneo zurückmelden.",
+];
 
 export function getHpFull() {
   return HP_FULL;
@@ -161,10 +161,15 @@ function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
   }
   disclaimer.style.visibility = "visible";
   if (isPartner) {
-    disclaimer.textContent = PARTNER_DISCLAIMER_TEXT(partnerName);
+    disclaimer.style.whiteSpace = "normal";
+    disclaimer.innerHTML = PARTNER_DISCLAIMER_TEXT(partnerName)
+      .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
+      .join("");
   } else if (selectedProvider === "Other") {
+    disclaimer.style.whiteSpace = "";
     disclaimer.textContent = OTHER_DISCLAIMER_TEXT;
   } else {
+    disclaimer.style.whiteSpace = "";
     disclaimer.textContent = disclaimer.dataset.defaultText || "";
   }
 }
