@@ -13,10 +13,7 @@ import {
   setSubmitButtonLoading,
   syncWebflowCheckbox
 } from './modules/utils.js';
-import {
-  fetchHealthProviders,
-  validateHealthInsuranceNumberField,
-} from './modules/healthProviders.js';
+import * as healthProvidersModule from './modules/healthProviders.js';
 import { 
   fetchPricing, 
   fetchContraindications, 
@@ -99,7 +96,7 @@ function onboardingHook({ current, index }) {
   if (index === 0) {
     const healthProviders = getFromStorage("healthProviders", {});
     if (!healthProviders || Object.keys(healthProviders).length === 0) {
-      fetchHealthProviders();
+      healthProvidersModule.fetchHealthProviders();
     }
     fetchPricing();
     fetchContraindications();
@@ -233,7 +230,10 @@ document.addEventListener("DOMContentLoaded", function () {
           } else if (valid) {
             setToStorage("selectedHealthProvider", dropdown.value.trim());
           }
-          const isHealthInsuranceNumberValid = validateHealthInsuranceNumberField(true);
+          const isHealthInsuranceNumberValid =
+            typeof healthProvidersModule.validateHealthInsuranceNumberField === "function"
+              ? healthProvidersModule.validateHealthInsuranceNumberField(true)
+              : true;
           if (!isHealthInsuranceNumberValid) {
             valid = false;
             errorMessages.push(dictionary["error.healthInsuranceNumberFormat"]);
@@ -531,7 +531,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setToStorage("userData", userData);
   }
 
-  fetchHealthProviders();
+  healthProvidersModule.fetchHealthProviders();
   fetchOnboardingSurvey();
   attachEventListeners();
   preventUncheckingCommunicationEmail();
@@ -550,7 +550,7 @@ document.addEventListener("DOMContentLoaded", function () {
       resetCheckoutView();
       currentStep = 0;
       saveCurrentStep(0);
-      fetchHealthProviders();
+      healthProvidersModule.fetchHealthProviders();
       showStep(currentStep);
     });
   }
