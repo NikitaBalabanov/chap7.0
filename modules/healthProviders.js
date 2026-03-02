@@ -5,8 +5,14 @@ import { escapeHtml, updateInfoBox } from './utils.js';
 
 let HP_FULL = null;
 let HP_FULL_PROMISE = null;
+let HP_PARTNERS = null;
+let HP_PARTNERS_PROMISE = null;
 const OTHER_DISCLAIMER_TEXT =
   "Leider hat deine Krankenversicherung keine Partnerschaft mit uns. Setz dich mit deiner Krankenkasse in Verbindung, um ihre Erstattungsrichtlinien zu verstehen.";
+const PARTNER_DISCLAIMER_TEXT = (partnerName) =>
+  `Dank unserer Partnerschaft mit deiner Krankenkasse${partnerName ? ` (${partnerName})` : ""} kannst du deinen kostenlosen Zugang zu den Preneo-Programmen mit deiner Versichertennummer freischalten.
+
+Zu Abrechnungszwecken wird Preneo meine Versichertennummer einmalig zur Überprüfung an meine Krankenversicherung übermitteln. Zur Bestätigung des Leistungsanspruchs wird die Krankenversicherung den Status meiner Versicherung an Preneo zurückmelden.`;
 
 export function getHpFull() {
   return HP_FULL;
@@ -17,6 +23,7 @@ export async function fetchHealthProviders() {
   const disclaimer = document.querySelector(".input_disclaimer");
   if (!dropdown) return;
 
+  HP_PARTNERS_PROMISE = fetchHealthInsurancePartners();
   dropdown.disabled = true;
   dropdown.innerHTML = `<option value="">${dictionary["select.healthProvider"]} …</option>`;
 
@@ -56,6 +63,48 @@ export async function fetchHealthProviders() {
   }
 }
 
+function normalizeName(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+function extractPartnerNames(rawData) {
+  if (!rawData || typeof rawData !== "object") return [];
+
+  const values = Array.isArray(rawData) ? rawData : Object.values(rawData);
+  const names = values
+    .map((entry) => {
+      if (typeof entry === "string") return entry;
+      if (entry && typeof entry === "object" && typeof entry.name === "string") {
+        return entry.name;
+      }
+      return "";
+    })
+    .map((name) => name.trim())
+    .filter(Boolean);
+
+  return [...new Set(names)];
+}
+
+async function fetchHealthInsurancePartners() {
+  try {
+    const response = await fetch(
+      getDocumentFromFireBase("healthInsurancePartners")
+    );
+    const json = await response.json();
+    const rawData = json?.success ? json?.data : json?.data ?? null;
+    HP_PARTNERS = extractPartnerNames(rawData);
+    setToStorage("healthInsurancePartners", HP_PARTNERS);
+    return HP_PARTNERS;
+  } catch (_) {
+    HP_PARTNERS = [];
+    setToStorage("healthInsurancePartners", HP_PARTNERS);
+    return HP_PARTNERS;
+  }
+}
+
 function getProviderDisplayName(providerKey, hpAll) {
   const name = hpAll?.[providerKey]?.name;
   if (typeof name === "string" && name.trim()) {
@@ -71,21 +120,49 @@ function moveOtherToEnd(providers) {
   return [...regular, ...others];
 }
 
-function updateDisclaimer(disclaimer, selectedProvider) {
-  if (!disclaimer) return;
-
-  if (!disclaimer.dataset.defaultText) {
-    disclaimer.dataset.defaultText = (disclaimer.textContent || "").trim();
+function getPartnerMatch(selectedProvider, hpAll) {
+  if (!selectedProvider) {
+    setToStorage("isSelectedProviderPartner", false);
+    return { isPartner: false, partnerName: "" };
   }
 
+  const providerDisplayName = getProviderDisplayName(selectedProvider, hpAll);
+  const partners =
+    HP_PARTNERS || getFromStorage("healthInsurancePartners", []) || [];
+  const normalizedProviderName = normalizeName(providerDisplayName);
+  const matchedPartnerName = partners.find(
+    (partnerName) => normalizeName(partnerName) === normalizedProviderName
+  );
+  const isPartner = Boolean(matchedPartnerName);
+
+  setToStorage("isSelectedProviderPartner", isPartner);
+  return {
+    isPartner,
+    partnerName: matchedPartnerName || providerDisplayName || "",
+  };
+}
+
+function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
   if (!selectedProvider) {
+    setToStorage("isSelectedProviderPartner", false);
+    if (!disclaimer) return;
+    if (!disclaimer.dataset.defaultText) {
+      disclaimer.dataset.defaultText = (disclaimer.textContent || "").trim();
+    }
     disclaimer.style.visibility = "hidden";
     disclaimer.textContent = disclaimer.dataset.defaultText || "";
     return;
   }
 
+  const { isPartner, partnerName } = getPartnerMatch(selectedProvider, hpAll);
+  if (!disclaimer) return;
+  if (!disclaimer.dataset.defaultText) {
+    disclaimer.dataset.defaultText = (disclaimer.textContent || "").trim();
+  }
   disclaimer.style.visibility = "visible";
-  if (selectedProvider === "Other") {
+  if (isPartner) {
+    disclaimer.textContent = PARTNER_DISCLAIMER_TEXT(partnerName);
+  } else if (selectedProvider === "Other") {
     disclaimer.textContent = OTHER_DISCLAIMER_TEXT;
   } else {
     disclaimer.textContent = disclaimer.dataset.defaultText || "";
@@ -111,13 +188,18 @@ function populateDropdown(providers, { dropdown, disclaimer }) {
 
   async function handleDropdownChange(e) {
     const selectedProvider = e.target.value || "";
-    updateDisclaimer(disclaimer, selectedProvider);
+    if (HP_PARTNERS_PROMISE) {
+      try {
+        await HP_PARTNERS_PROMISE;
+      } catch (_) {}
+    }
 
     if (!HP_FULL && HP_FULL_PROMISE) {
       try { await HP_FULL_PROMISE; } catch(_) {}
     }
-    const hpAll = HP_FULL || getFromStorage("healthProviders", {}) || {};
-    const hp = hpAll[selectedProvider];
+    const hpAllCurrent = HP_FULL || getFromStorage("healthProviders", {}) || {};
+    const hp = hpAllCurrent[selectedProvider];
+    updateDisclaimer(disclaimer, selectedProvider, hpAllCurrent);
 
     const takeoverEl = document.querySelector("#takeover");
     if (takeoverEl) takeoverEl.innerHTML = hp?.takeover || "";
@@ -132,14 +214,15 @@ function populateDropdown(providers, { dropdown, disclaimer }) {
   if (saved && providers.includes(saved)) {
     dropdown.value = saved;
     (async () => {
+      if (HP_PARTNERS_PROMISE) { try { await HP_PARTNERS_PROMISE; } catch(_) {} }
       if (!HP_FULL && HP_FULL_PROMISE) { try { await HP_FULL_PROMISE; } catch(_) {} }
       const hp = (HP_FULL || getFromStorage("healthProviders", {}))[saved] || {};
       const takeoverEl = document.querySelector("#takeover");
       if (takeoverEl) takeoverEl.innerHTML = hp?.takeover || "";
-      updateDisclaimer(disclaimer, saved);
+      updateDisclaimer(disclaimer, saved, HP_FULL || hpAll);
       updateInfoBox(saved);
     })();
   } else {
-    updateDisclaimer(disclaimer, "");
+    updateDisclaimer(disclaimer, "", hpAll);
   }
 }

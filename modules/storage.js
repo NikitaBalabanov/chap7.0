@@ -21,6 +21,8 @@ export function clearLocalStorageAfterPayment() {
     "currentStep",
     "userData",
     "selectedHealthProvider",
+    "healthInsurancePartners",
+    "isSelectedProviderPartner",
     "pricing",
     "contraindications",
     "courses",
