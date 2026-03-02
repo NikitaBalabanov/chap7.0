@@ -406,6 +406,13 @@ function createHealthInsuranceNumberInput(disclaimer) {
   input.autocomplete = "off";
   input.className = "w-input";
 
+  const label = document.createElement("label");
+  label.className = "form_main_label";
+  label.setAttribute("for", HEALTH_INSURANCE_NUMBER_INPUT_ID);
+  label.textContent = "Krankenversichertennummer";
+  label.style.display = "block";
+  label.style.marginBottom = "8px";
+
   const savedValue = getFromStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, null);
   input.value = typeof savedValue === "string" ? savedValue : "";
 
@@ -435,6 +442,7 @@ function createHealthInsuranceNumberInput(disclaimer) {
   input.addEventListener("input", persist);
   input.addEventListener("change", persist);
 
+  wrap.appendChild(label);
   wrap.appendChild(input);
   wrap.appendChild(errorEl);
   disclaimer.insertAdjacentElement("afterend", wrap);
