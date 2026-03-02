@@ -7,7 +7,8 @@ let HP_FULL = null;
 let HP_FULL_PROMISE = null;
 let HP_PARTNERS = null;
 let HP_PARTNERS_PROMISE = null;
-const HEALTH_INSURANCE_NUMBER_STORAGE_KEY = "health insurance number";
+const HEALTH_INSURANCE_NUMBER_STORAGE_KEY = "healthInsuranceNumber";
+const LEGACY_HEALTH_INSURANCE_NUMBER_STORAGE_KEY = "health insurance number";
 const HEALTH_INSURANCE_NUMBER_WRAP_ID = "health-insurance-number-wrap";
 const HEALTH_INSURANCE_NUMBER_INPUT_ID = "health-insurance-number-input";
 const HEALTH_INSURANCE_NUMBER_ERROR_ID = "health-insurance-number-error";
@@ -21,6 +22,35 @@ const PARTNER_DISCLAIMER_TEXT = (partnerName) => [
 
 export function getHpFull() {
   return HP_FULL;
+}
+
+function getStoredHealthInsuranceNumber() {
+  const current = getFromStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, undefined);
+  if (current !== undefined) {
+    return current;
+  }
+
+  const legacy = getFromStorage(LEGACY_HEALTH_INSURANCE_NUMBER_STORAGE_KEY, undefined);
+  if (legacy !== undefined) {
+    setToStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, legacy);
+    try {
+      localStorage.removeItem(LEGACY_HEALTH_INSURANCE_NUMBER_STORAGE_KEY);
+    } catch (_) {}
+    return legacy;
+  }
+
+  return null;
+}
+
+function setStoredHealthInsuranceNumber(value) {
+  setToStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, value);
+  try {
+    localStorage.removeItem(LEGACY_HEALTH_INSURANCE_NUMBER_STORAGE_KEY);
+  } catch (_) {}
+}
+
+function emitHealthProviderUpdated() {
+  document.dispatchEvent(new CustomEvent("health-provider-updated"));
 }
 
 function normalizeKvnr(value) {
@@ -163,22 +193,28 @@ function validateHealthInsuranceNumberValue(input, errorEl, showError = true) {
   if (!input) return true;
   const rawValue = String(input.value ?? "");
   const trimmed = rawValue.trim();
+  const selectedProvider = getFromStorage("selectedHealthProvider", "");
+  const hpAll = HP_FULL || getFromStorage("healthProviders", {}) || {};
+  const { isPartner } = getPartnerMatch(selectedProvider, hpAll);
 
   if (!trimmed) {
-    setToStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, null);
+    setStoredHealthInsuranceNumber(null);
     setHealthInsuranceNumberErrorState(input, errorEl, false);
+    updateSelectedProviderPartnerFlag(isPartner);
     return true;
   }
 
   const result = validateKvnr({ input: trimmed });
   if (result.isValid) {
     input.value = result.normalized;
-    setToStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, result.normalized);
+    setStoredHealthInsuranceNumber(result.normalized);
     setHealthInsuranceNumberErrorState(input, errorEl, false);
+    updateSelectedProviderPartnerFlag(isPartner);
     return true;
   }
 
-  setToStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, trimmed);
+  setStoredHealthInsuranceNumber(trimmed);
+  updateSelectedProviderPartnerFlag(isPartner);
   if (showError) {
     setHealthInsuranceNumberErrorState(input, errorEl, true);
   }
@@ -187,7 +223,13 @@ function validateHealthInsuranceNumberValue(input, errorEl, showError = true) {
 
 export function validateHealthInsuranceNumberField(showError = true) {
   const { input, errorEl } = getHealthInsuranceNumberElements();
-  if (!input) return true;
+  if (!input) {
+    const selectedProvider = getFromStorage("selectedHealthProvider", "");
+    const hpAll = HP_FULL || getFromStorage("healthProviders", {}) || {};
+    const { isPartner } = getPartnerMatch(selectedProvider, hpAll);
+    updateSelectedProviderPartnerFlag(isPartner);
+    return true;
+  }
   return validateHealthInsuranceNumberValue(input, errorEl, showError);
 }
 
@@ -295,7 +337,6 @@ function moveOtherToEnd(providers) {
 
 function getPartnerMatch(selectedProvider, hpAll) {
   if (!selectedProvider) {
-    setToStorage("isSelectedProviderPartner", false);
     return { isPartner: false, partnerName: "" };
   }
 
@@ -308,22 +349,34 @@ function getPartnerMatch(selectedProvider, hpAll) {
   );
   const isPartner = Boolean(matchedPartnerName);
 
-  setToStorage("isSelectedProviderPartner", isPartner);
   return {
     isPartner,
     partnerName: matchedPartnerName || providerDisplayName || "",
   };
 }
 
-function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
-  const notifyProviderChange = () => {
-    document.dispatchEvent(new CustomEvent("health-provider-updated"));
-  };
+function updateSelectedProviderPartnerFlag(isProviderPartner) {
+  const savedHealthInsuranceNumber = getStoredHealthInsuranceNumber();
+  const hasSavedValidHealthInsuranceNumber =
+    typeof savedHealthInsuranceNumber === "string" &&
+    savedHealthInsuranceNumber.trim() &&
+    validateKvnr({ input: savedHealthInsuranceNumber }).isValid;
 
+  const nextValue = Boolean(isProviderPartner && hasSavedValidHealthInsuranceNumber);
+  const previousValue = getFromStorage("isSelectedProviderPartner", false) === true;
+  setToStorage("isSelectedProviderPartner", nextValue);
+
+  if (previousValue !== nextValue) {
+    emitHealthProviderUpdated();
+  }
+  return nextValue;
+}
+
+function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
   if (!selectedProvider) {
     setToStorage("isSelectedProviderPartner", false);
     syncHealthInsuranceNumberInput(disclaimer, false);
-    notifyProviderChange();
+    emitHealthProviderUpdated();
     if (!disclaimer) return;
     if (!disclaimer.dataset.defaultText) {
       disclaimer.dataset.defaultText = (disclaimer.textContent || "").trim();
@@ -334,8 +387,9 @@ function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
   }
 
   const { isPartner, partnerName } = getPartnerMatch(selectedProvider, hpAll);
+  updateSelectedProviderPartnerFlag(isPartner);
   syncHealthInsuranceNumberInput(disclaimer, isPartner);
-  notifyProviderChange();
+  emitHealthProviderUpdated();
   if (!disclaimer) return;
   if (!disclaimer.dataset.defaultText) {
     disclaimer.dataset.defaultText = (disclaimer.textContent || "").trim();
@@ -387,7 +441,7 @@ function createHealthInsuranceNumberInput(disclaimer) {
   if (existing) {
     const input = existing.querySelector(`#${HEALTH_INSURANCE_NUMBER_INPUT_ID}`);
     if (input) {
-      const savedValue = getFromStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, null);
+      const savedValue = getStoredHealthInsuranceNumber();
       input.value = typeof savedValue === "string" ? savedValue : "";
     }
     return;
@@ -413,7 +467,7 @@ function createHealthInsuranceNumberInput(disclaimer) {
   label.style.display = "block";
   label.style.marginBottom = "8px";
 
-  const savedValue = getFromStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, null);
+  const savedValue = getStoredHealthInsuranceNumber();
   input.value = typeof savedValue === "string" ? savedValue : "";
 
   const errorEl = document.createElement("div");
@@ -427,7 +481,7 @@ function createHealthInsuranceNumberInput(disclaimer) {
   let hasFocused = false;
   const persist = () => {
     const trimmed = input.value.trim();
-    setToStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, trimmed ? trimmed : null);
+    setStoredHealthInsuranceNumber(trimmed ? trimmed : null);
     if (!trimmed) {
       setHealthInsuranceNumberErrorState(input, errorEl, false);
     }

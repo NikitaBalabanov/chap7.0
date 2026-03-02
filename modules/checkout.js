@@ -1,7 +1,12 @@
 import { CURRENCY } from './config.js';
 import { getFromStorage } from './storage.js';
 
+function isPartnerPricingEnabled() {
+  return getFromStorage("isSelectedProviderPartner", false) === true;
+}
+
 export function calculateTotalPrice() {
+  if (isPartnerPricingEnabled()) return 0;
   const pricing = getFromStorage("pricing", {});
   const selectedCourses = getFromStorage("selectedCourses", []);
   const pricePerCourse = Number(pricing.programPrice) || 0;
@@ -18,7 +23,9 @@ export function populateCheckout() {
   const totalContainer = document.querySelector("#priceTotal");
   const selectedCourses = getFromStorage("selectedCourses", []);
   const pricing = getFromStorage("pricing", {});
-  const pricePerCourse = Number(pricing.programPrice) || 0;
+  const pricePerCourse = isPartnerPricingEnabled()
+    ? 0
+    : Number(pricing.programPrice) || 0;
 
   if (getFromStorage("trial", false)) {
     const totalWrap = document.querySelector(".price_total");
