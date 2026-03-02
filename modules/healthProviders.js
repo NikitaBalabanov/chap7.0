@@ -7,6 +7,9 @@ let HP_FULL = null;
 let HP_FULL_PROMISE = null;
 let HP_PARTNERS = null;
 let HP_PARTNERS_PROMISE = null;
+const HEALTH_INSURANCE_NUMBER_STORAGE_KEY = "health insurance number";
+const HEALTH_INSURANCE_NUMBER_WRAP_ID = "health-insurance-number-wrap";
+const HEALTH_INSURANCE_NUMBER_INPUT_ID = "health-insurance-number-input";
 const OTHER_DISCLAIMER_TEXT =
   "Leider hat deine Krankenversicherung keine Partnerschaft mit uns. Setz dich mit deiner Krankenkasse in Verbindung, um ihre Erstattungsrichtlinien zu verstehen.";
 const PARTNER_DISCLAIMER_TEXT = (partnerName) => [
@@ -149,6 +152,7 @@ function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
 
   if (!selectedProvider) {
     setToStorage("isSelectedProviderPartner", false);
+    syncHealthInsuranceNumberInput(disclaimer, false);
     notifyProviderChange();
     if (!disclaimer) return;
     if (!disclaimer.dataset.defaultText) {
@@ -160,6 +164,7 @@ function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
   }
 
   const { isPartner, partnerName } = getPartnerMatch(selectedProvider, hpAll);
+  syncHealthInsuranceNumberInput(disclaimer, isPartner);
   notifyProviderChange();
   if (!disclaimer) return;
   if (!disclaimer.dataset.defaultText) {
@@ -195,6 +200,60 @@ function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
     disclaimer.style.whiteSpace = "";
     disclaimer.textContent = disclaimer.dataset.defaultText || "";
   }
+}
+
+function removeHealthInsuranceNumberInput(disclaimer) {
+  const scope = disclaimer?.parentElement || document;
+  scope
+    .querySelectorAll(`#${HEALTH_INSURANCE_NUMBER_WRAP_ID}`)
+    .forEach((el) => el.remove());
+}
+
+function createHealthInsuranceNumberInput(disclaimer) {
+  if (!disclaimer) return;
+  const scope = disclaimer.parentElement || document;
+  const existing = scope.querySelector(`#${HEALTH_INSURANCE_NUMBER_WRAP_ID}`);
+  if (existing) {
+    const input = existing.querySelector(`#${HEALTH_INSURANCE_NUMBER_INPUT_ID}`);
+    if (input) {
+      const savedValue = getFromStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, "");
+      input.value = typeof savedValue === "string" ? savedValue : "";
+    }
+    return;
+  }
+
+  const wrap = document.createElement("div");
+  wrap.id = HEALTH_INSURANCE_NUMBER_WRAP_ID;
+  wrap.className = "form_main_field_wrap";
+  wrap.style.marginTop = "12px";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.id = HEALTH_INSURANCE_NUMBER_INPUT_ID;
+  input.name = "healthInsuranceNumber";
+  input.placeholder = "Versichertennummer (optional)";
+  input.autocomplete = "off";
+  input.className = "w-input";
+
+  const savedValue = getFromStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, "");
+  input.value = typeof savedValue === "string" ? savedValue : "";
+
+  const persist = () => {
+    setToStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, input.value.trim());
+  };
+  input.addEventListener("input", persist);
+  input.addEventListener("change", persist);
+
+  wrap.appendChild(input);
+  disclaimer.insertAdjacentElement("afterend", wrap);
+}
+
+function syncHealthInsuranceNumberInput(disclaimer, shouldShow) {
+  if (shouldShow) {
+    createHealthInsuranceNumberInput(disclaimer);
+    return;
+  }
+  removeHealthInsuranceNumberInput(disclaimer);
 }
 
 function populateDropdown(providers, { dropdown, disclaimer }) {

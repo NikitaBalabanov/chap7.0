@@ -23,6 +23,7 @@ export function clearLocalStorageAfterPayment() {
     "selectedHealthProvider",
     "healthInsurancePartners",
     "isSelectedProviderPartner",
+    "health insurance number",
     "pricing",
     "contraindications",
     "courses",
