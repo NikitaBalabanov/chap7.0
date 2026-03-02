@@ -226,7 +226,7 @@ function createHealthInsuranceNumberInput(disclaimer) {
   const wrap = document.createElement("div");
   wrap.id = HEALTH_INSURANCE_NUMBER_WRAP_ID;
   wrap.className = "form_main_field_wrap";
-  wrap.style.marginTop = "12px";
+  wrap.style.marginTop = "24px";
 
   const input = document.createElement("input");
   input.type = "text";
