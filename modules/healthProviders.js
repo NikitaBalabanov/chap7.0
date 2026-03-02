@@ -161,12 +161,24 @@ function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
   }
   disclaimer.style.visibility = "visible";
   if (isPartner) {
-    disclaimer.style.whiteSpace = "pre-line";
-    disclaimer.textContent = PARTNER_DISCLAIMER_TEXT(partnerName).join("\n\n");
+    const [firstParagraph, secondParagraph] = PARTNER_DISCLAIMER_TEXT(partnerName);
+    disclaimer.style.display = "flex";
+    disclaimer.style.flexDirection = "column";
+    disclaimer.style.rowGap = "12px";
+    disclaimer.innerHTML = `
+      <span>${escapeHtml(firstParagraph)}</span>
+      <span>${escapeHtml(secondParagraph)}</span>
+    `;
   } else if (selectedProvider === "Other") {
+    disclaimer.style.display = "";
+    disclaimer.style.flexDirection = "";
+    disclaimer.style.rowGap = "";
     disclaimer.style.whiteSpace = "";
     disclaimer.textContent = OTHER_DISCLAIMER_TEXT;
   } else {
+    disclaimer.style.display = "";
+    disclaimer.style.flexDirection = "";
+    disclaimer.style.rowGap = "";
     disclaimer.style.whiteSpace = "";
     disclaimer.textContent = disclaimer.dataset.defaultText || "";
   }
