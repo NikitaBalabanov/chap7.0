@@ -247,6 +247,10 @@ export function applyHealthProviderVisibilityRules() {
   document.querySelectorAll(".hide-if-no-health-provider").forEach((el) => {
     el.style.display = isNotInListProvider ? "none" : "";
   });
+
+  document.querySelectorAll(".hide-if-partner").forEach((el) => {
+    el.style.display = isNotInListProvider ? "none" : "";
+  });
 }
 
 export function populateContraindications() {
