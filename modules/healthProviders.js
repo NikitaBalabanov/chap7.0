@@ -10,6 +10,8 @@ let HP_PARTNERS_PROMISE = null;
 const HEALTH_INSURANCE_NUMBER_STORAGE_KEY = "health insurance number";
 const HEALTH_INSURANCE_NUMBER_WRAP_ID = "health-insurance-number-wrap";
 const HEALTH_INSURANCE_NUMBER_INPUT_ID = "health-insurance-number-input";
+const HEALTH_INSURANCE_NUMBER_ERROR_ID = "health-insurance-number-error";
+const KVNR_INVALID_ERROR_TEXT = "Ungültiges Format der Versichertennummer";
 const OTHER_DISCLAIMER_TEXT =
   "Leider hat deine Krankenversicherung keine Partnerschaft mit uns. Setz dich mit deiner Krankenkasse in Verbindung, um ihre Erstattungsrichtlinien zu verstehen.";
 const PARTNER_DISCLAIMER_TEXT = (partnerName) => [
@@ -19,6 +21,174 @@ const PARTNER_DISCLAIMER_TEXT = (partnerName) => [
 
 export function getHpFull() {
   return HP_FULL;
+}
+
+function normalizeKvnr(value) {
+  const v = String(value ?? "").trim();
+  if (!v) return null;
+  return v.replace(/[\s-]/g, "").toUpperCase();
+}
+
+function letterToTwoDigits(letter) {
+  const code = letter.charCodeAt(0);
+  const A = "A".charCodeAt(0);
+  const Z = "Z".charCodeAt(0);
+  if (code < A || code > Z) return null;
+
+  const pos = code - A + 1;
+  const str = String(pos).padStart(2, "0");
+  return [Number(str[0]), Number(str[1])];
+}
+
+function toDigits(s) {
+  const out = [];
+  for (let i = 0; i < s.length; i++) out.push(s.charCodeAt(i) - 48);
+  return out;
+}
+
+function calcMod10CheckDigit(digits) {
+  let sum = 0;
+  for (let i = 0; i < digits.length; i++) {
+    const weight = i % 2 === 0 ? 1 : 2;
+    const p = digits[i] * weight;
+    sum += Math.floor(p / 10) + (p % 10);
+  }
+  return sum % 10;
+}
+
+export function validateKvnr({ input }) {
+  const normalized = normalizeKvnr(input);
+  if (!normalized) {
+    return { isValid: false, normalized: null, reason: "Empty input" };
+  }
+
+  const len = normalized.length;
+  if (len !== 10 && len !== 20) {
+    return {
+      isValid: false,
+      normalized,
+      reason: `Unsupported length ${len} (expected 10 or 20)`,
+    };
+  }
+
+  if (!/^[A-Z][0-9]+$/.test(normalized)) {
+    return {
+      isValid: false,
+      normalized,
+      reason: "Invalid characters (expected: 1 letter A-Z + digits)",
+    };
+  }
+
+  const letter = normalized[0];
+  const digits = normalized.slice(1);
+
+  const letterDigits = letterToTwoDigits(letter);
+  if (!letterDigits) {
+    return { isValid: false, normalized, reason: "Invalid leading letter" };
+  }
+
+  const first8 = digits.slice(0, 8);
+  const check1Char = digits[8];
+
+  if (first8.length !== 8 || check1Char == null) {
+    return { isValid: false, normalized, reason: "Malformed 10-digit part" };
+  }
+
+  const check1Expected = calcMod10CheckDigit([
+    ...letterDigits,
+    ...toDigits(first8),
+  ]);
+  const check1Actual = Number(check1Char);
+
+  if (check1Expected !== check1Actual) {
+    return {
+      isValid: false,
+      normalized,
+      reason: `Invalid check digit #1 (expected ${check1Expected}, got ${check1Actual})`,
+    };
+  }
+
+  if (len === 10) {
+    return { isValid: true, normalized, length: 10 };
+  }
+
+  const ik = digits.slice(9, 18);
+  const check2Char = digits[18];
+
+  if (ik.length !== 9 || check2Char == null) {
+    return { isValid: false, normalized, reason: "Malformed IK/check2 part" };
+  }
+
+  const check2Expected = calcMod10CheckDigit([
+    ...letterDigits,
+    ...toDigits(first8),
+    check1Actual,
+    ...toDigits(ik),
+  ]);
+  const check2Actual = Number(check2Char);
+
+  if (check2Expected !== check2Actual) {
+    return {
+      isValid: false,
+      normalized,
+      reason: `Invalid check digit #2 (expected ${check2Expected}, got ${check2Actual})`,
+    };
+  }
+
+  return { isValid: true, normalized, length: 20 };
+}
+
+function getHealthInsuranceNumberElements() {
+  const input = document.getElementById(HEALTH_INSURANCE_NUMBER_INPUT_ID);
+  if (!input) return { input: null, errorEl: null };
+  const wrap = input.closest(`#${HEALTH_INSURANCE_NUMBER_WRAP_ID}`);
+  const errorEl = wrap?.querySelector(`#${HEALTH_INSURANCE_NUMBER_ERROR_ID}`) || null;
+  return { input, errorEl };
+}
+
+function setHealthInsuranceNumberErrorState(input, errorEl, hasError) {
+  if (!input || !errorEl) return;
+  if (hasError) {
+    input.classList.add("error");
+    errorEl.style.display = "block";
+    errorEl.textContent = KVNR_INVALID_ERROR_TEXT;
+    return;
+  }
+  input.classList.remove("error");
+  errorEl.style.display = "none";
+  errorEl.textContent = "";
+}
+
+function validateHealthInsuranceNumberValue(input, errorEl, showError = true) {
+  if (!input) return true;
+  const rawValue = String(input.value ?? "");
+  const trimmed = rawValue.trim();
+
+  if (!trimmed) {
+    setToStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, null);
+    setHealthInsuranceNumberErrorState(input, errorEl, false);
+    return true;
+  }
+
+  const result = validateKvnr({ input: trimmed });
+  if (result.isValid) {
+    input.value = result.normalized;
+    setToStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, result.normalized);
+    setHealthInsuranceNumberErrorState(input, errorEl, false);
+    return true;
+  }
+
+  setToStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, trimmed);
+  if (showError) {
+    setHealthInsuranceNumberErrorState(input, errorEl, true);
+  }
+  return false;
+}
+
+export function validateHealthInsuranceNumberField(showError = true) {
+  const { input, errorEl } = getHealthInsuranceNumberElements();
+  if (!input) return true;
+  return validateHealthInsuranceNumberValue(input, errorEl, showError);
 }
 
 export async function fetchHealthProviders() {
@@ -217,7 +387,7 @@ function createHealthInsuranceNumberInput(disclaimer) {
   if (existing) {
     const input = existing.querySelector(`#${HEALTH_INSURANCE_NUMBER_INPUT_ID}`);
     if (input) {
-      const savedValue = getFromStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, "");
+      const savedValue = getFromStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, null);
       input.value = typeof savedValue === "string" ? savedValue : "";
     }
     return;
@@ -236,16 +406,37 @@ function createHealthInsuranceNumberInput(disclaimer) {
   input.autocomplete = "off";
   input.className = "w-input";
 
-  const savedValue = getFromStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, "");
+  const savedValue = getFromStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, null);
   input.value = typeof savedValue === "string" ? savedValue : "";
 
+  const errorEl = document.createElement("div");
+  errorEl.id = HEALTH_INSURANCE_NUMBER_ERROR_ID;
+  errorEl.style.display = "none";
+  errorEl.style.color = "#e53935";
+  errorEl.style.marginTop = "6px";
+  errorEl.style.fontSize = "14px";
+  errorEl.style.lineHeight = "1.4";
+
+  let hasFocused = false;
   const persist = () => {
-    setToStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, input.value.trim());
+    const trimmed = input.value.trim();
+    setToStorage(HEALTH_INSURANCE_NUMBER_STORAGE_KEY, trimmed ? trimmed : null);
+    if (!trimmed) {
+      setHealthInsuranceNumberErrorState(input, errorEl, false);
+    }
   };
+  input.addEventListener("focus", () => {
+    hasFocused = true;
+  });
+  input.addEventListener("blur", () => {
+    if (!hasFocused) return;
+    validateHealthInsuranceNumberValue(input, errorEl, true);
+  });
   input.addEventListener("input", persist);
   input.addEventListener("change", persist);
 
   wrap.appendChild(input);
+  wrap.appendChild(errorEl);
   disclaimer.insertAdjacentElement("afterend", wrap);
 }
 

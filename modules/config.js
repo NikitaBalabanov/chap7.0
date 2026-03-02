@@ -12,6 +12,7 @@ export const dictionary = {
   "error.privacyPolicy": "Bitte stimme den AGB zu",
   "error.requiredFields": "Bitte fülle alle erforderlichen Felder aus",
   "error.healthProvider": "Bitte wähle deine Krankenkasse aus",
+  "error.healthInsuranceNumberFormat": "Ungültiges Format der Versichertennummer",
   "error.selectOptions": "Bitte wähle mehr als eine Option aus",
   "error.tooManyOptions": "Du kannst maximal 2 Programme auswählen",
   "error.selectPrograms": "Bitte wähle mindestens ein Programm aus",

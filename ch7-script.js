@@ -13,7 +13,10 @@ import {
   setSubmitButtonLoading,
   syncWebflowCheckbox
 } from './modules/utils.js';
-import { fetchHealthProviders } from './modules/healthProviders.js';
+import {
+  fetchHealthProviders,
+  validateHealthInsuranceNumberField,
+} from './modules/healthProviders.js';
 import { 
   fetchPricing, 
   fetchContraindications, 
@@ -229,6 +232,11 @@ document.addEventListener("DOMContentLoaded", function () {
             errorMessages.push(dictionary["error.healthProvider"]);
           } else if (valid) {
             setToStorage("selectedHealthProvider", dropdown.value.trim());
+          }
+          const isHealthInsuranceNumberValid = validateHealthInsuranceNumberField(true);
+          if (!isHealthInsuranceNumberValid) {
+            valid = false;
+            errorMessages.push(dictionary["error.healthInsuranceNumberFormat"]);
           }
           break;
         }
