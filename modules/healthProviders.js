@@ -162,13 +162,20 @@ function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
   disclaimer.style.visibility = "visible";
   if (isPartner) {
     const [firstParagraph, secondParagraph] = PARTNER_DISCLAIMER_TEXT(partnerName);
-    disclaimer.style.display = "flex";
-    disclaimer.style.flexDirection = "column";
-    disclaimer.style.rowGap = "12px";
-    disclaimer.innerHTML = `
-      <span>${escapeHtml(firstParagraph)}</span>
-      <span>${escapeHtml(secondParagraph)}</span>
-    `;
+    disclaimer.style.display = "";
+    disclaimer.style.flexDirection = "";
+    disclaimer.style.rowGap = "";
+
+    const firstSpan = document.createElement("span");
+    firstSpan.textContent = firstParagraph;
+    firstSpan.style.display = "block";
+
+    const secondSpan = document.createElement("span");
+    secondSpan.textContent = secondParagraph;
+    secondSpan.style.display = "block";
+    secondSpan.style.marginTop = "12px";
+
+    disclaimer.replaceChildren(firstSpan, secondSpan);
   } else if (selectedProvider === "Other") {
     disclaimer.style.display = "";
     disclaimer.style.flexDirection = "";
