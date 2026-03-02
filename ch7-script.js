@@ -46,6 +46,17 @@ import {
 
 let healthProviderVisibilityObserver = null;
 
+function ensureHealthProviderVisibilityStyles() {
+  if (document.getElementById("health-provider-visibility-style")) return;
+  const style = document.createElement("style");
+  style.id = "health-provider-visibility-style";
+  style.textContent = `
+    .is-provider-not-in-list .hide-if-no-health-provider { display: none !important; }
+    .is-provider-partner .hide-if-partner { display: none !important; }
+  `;
+  document.head.appendChild(style);
+}
+
 function applyHealthProviderVisibilityWithRetries() {
   applyHealthProviderVisibilityRules();
   requestAnimationFrame(() => applyHealthProviderVisibilityRules());
@@ -198,9 +209,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     saveCurrentStep(index);
     onboardingHook({ steps: steps, current: steps[index], index: index });
-    if (index >= 3) {
-      applyHealthProviderVisibilityWithRetries();
-    }
+    applyHealthProviderVisibilityWithRetries();
   }
 
   async function isCurrentStepValid() {
@@ -518,6 +527,10 @@ document.addEventListener("DOMContentLoaded", function () {
   fetchOnboardingSurvey();
   attachEventListeners();
   preventUncheckingCommunicationEmail();
+  ensureHealthProviderVisibilityStyles();
+  document.addEventListener("health-provider-updated", () => {
+    applyHealthProviderVisibilityWithRetries();
+  });
   showStep(currentStep);
 
   const backToOnboarding = document.getElementById("back-to-onboarding");

@@ -256,6 +256,9 @@ export function applyHealthProviderVisibilityRules() {
   document.querySelectorAll(".hide-if-partner").forEach((el) => {
     el.style.display = shouldHidePartnerElements ? "none" : "";
   });
+
+  document.body.classList.toggle("is-provider-not-in-list", isNotInListProvider);
+  document.body.classList.toggle("is-provider-partner", shouldHidePartnerElements);
 }
 
 export function populateContraindications() {

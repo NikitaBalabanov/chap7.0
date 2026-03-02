@@ -143,8 +143,13 @@ function getPartnerMatch(selectedProvider, hpAll) {
 }
 
 function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
+  const notifyProviderChange = () => {
+    document.dispatchEvent(new CustomEvent("health-provider-updated"));
+  };
+
   if (!selectedProvider) {
     setToStorage("isSelectedProviderPartner", false);
+    notifyProviderChange();
     if (!disclaimer) return;
     if (!disclaimer.dataset.defaultText) {
       disclaimer.dataset.defaultText = (disclaimer.textContent || "").trim();
@@ -155,6 +160,7 @@ function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
   }
 
   const { isPartner, partnerName } = getPartnerMatch(selectedProvider, hpAll);
+  notifyProviderChange();
   if (!disclaimer) return;
   if (!disclaimer.dataset.defaultText) {
     disclaimer.dataset.defaultText = (disclaimer.textContent || "").trim();
