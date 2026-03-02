@@ -222,7 +222,10 @@ export function applyHealthProviderVisibilityRules() {
       ? selectedHealthProviderRaw.trim()
       : "";
   const healthProviders = getFromStorage("healthProviders", {});
-  const isOtherProvider = selectedHealthProvider.toLowerCase() === "other";
+  const normalizedProvider = selectedHealthProvider.toLowerCase();
+  const isOtherProvider = normalizedProvider === "other";
+  const isNotInListProvider =
+    normalizedProvider === "nicht in der liste" || isOtherProvider;
   const takeoverText =
     !isOtherProvider &&
     selectedHealthProvider &&
@@ -242,7 +245,7 @@ export function applyHealthProviderVisibilityRules() {
     });
 
   document.querySelectorAll(".hide-if-no-health-provider").forEach((el) => {
-    el.style.display = "none";
+    el.style.display = isNotInListProvider ? "none" : "";
   });
 }
 
