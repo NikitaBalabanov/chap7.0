@@ -1,4 +1,4 @@
-import { getFromStorage, setToStorage } from './storage.js';
+import { getFromStorage, setToStorage, clearLocalStorageAfterPayment } from './storage.js';
 import { 
   getUserIdSafe, 
   getSubmitButtonText, 
@@ -11,7 +11,11 @@ import {
 import { hideFullscreenLoader } from './loader.js';
 import { calculateTotalPrice } from './checkout.js';
 import { ensureEmailVerifiedThenPay } from './stripe.js';
-import { createUser, createTrialUser } from './userCreation.js';
+import {
+  createUser,
+  createTrialUser,
+  isInsuranceProviderPartnerResponse,
+} from './userCreation.js';
 
 export { clearPasswordField, disableFormFieldsIfUserExists, hidePasswordFieldsIfUserExists };
 
@@ -268,7 +272,16 @@ export async function triggerFormSubmissionFlow(showLoader = false) {
       return;
     }
 
-    await createUser(passwordForSubmission);
+    const createUserResult = await createUser(passwordForSubmission);
+    if (isInsuranceProviderPartnerResponse(createUserResult)) {
+      if (showLoader) hideFullscreenLoader();
+      clearLocalStorageAfterPayment();
+      window.location.href = window.location.href.replace(
+        "onboarding",
+        "vielen-dank"
+      );
+      return;
+    }
     await ensureEmailVerifiedThenPay(calculateTotalPrice(), showLoader);
   } catch (error) {
     console.error("Auto-submit error:", error);

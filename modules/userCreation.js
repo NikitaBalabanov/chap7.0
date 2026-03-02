@@ -7,6 +7,34 @@ import { getFilteredContraindications } from './pricing.js';
 import { getHpFull } from './healthProviders.js';
 import { ensureEmailVerifiedThenCompleteTrial } from './stripe.js';
 
+function buildInsurancePayload(healthProviderData, selectedHealthProvider) {
+  const storedInsuranceNumber = getFromStorage("healthInsuranceNumber", null);
+  const insuranceNumber =
+    typeof storedInsuranceNumber === "string" && storedInsuranceNumber.trim()
+      ? storedInsuranceNumber.trim().toUpperCase()
+      : null;
+  const insuranceProvider =
+    (typeof healthProviderData?.name === "string" && healthProviderData.name.trim()) ||
+    (typeof selectedHealthProvider === "string" && selectedHealthProvider.trim()) ||
+    "";
+
+  if (!insuranceNumber || !insuranceProvider) {
+    return {};
+  }
+
+  return {
+    insuranceNumber,
+    insuranceProvider,
+  };
+}
+
+export function isInsuranceProviderPartnerResponse(data) {
+  return Boolean(
+    data?.isInsuranceProviderPartned === true ||
+      data?.isInsuranceProviderPartner === true
+  );
+}
+
 export async function createUser(passwordOverride = null) {
   try {
     const errorDiv = document.querySelector("#error_message_step5");
@@ -66,6 +94,7 @@ export async function createUser(passwordOverride = null) {
           step2: onboardingSurveyAnswers_2.map((item) => item.type),
         },
       },
+      ...buildInsurancePayload(healthProviderData, selectedHealthProvider),
     };
 
     const password =
@@ -175,6 +204,7 @@ export async function createTrialUser(showLoader = false, passwordOverride = nul
           step2: onboardingSurveyAnswers_2.map((item) => item.type),
         },
       },
+      ...buildInsurancePayload(healthProviderData, selectedHealthProvider),
     };
 
     const password =

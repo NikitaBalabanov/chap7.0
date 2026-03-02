@@ -32,7 +32,12 @@ import {
 } from './modules/onboarding.js';
 import { populateCheckout, calculateTotalPrice, resetCheckoutView } from './modules/checkout.js';
 import { ensureEmailVerifiedThenPay } from './modules/stripe.js';
-import { createUser, createTrialUser, populateNamePrefix } from './modules/userCreation.js';
+import {
+  createUser,
+  createTrialUser,
+  populateNamePrefix,
+  isInsuranceProviderPartnerResponse,
+} from './modules/userCreation.js';
 import { 
   saveFormData,
   restoreFormData, 
@@ -412,7 +417,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
               }
               
-              await createUser(passwordForSubmission);
+              const createUserResult = await createUser(passwordForSubmission);
+              if (isInsuranceProviderPartnerResponse(createUserResult)) {
+                clearLocalStorageAfterPayment();
+                window.location.href = window.location.href.replace(
+                  "onboarding",
+                  "vielen-dank"
+                );
+                return;
+              }
               await ensureEmailVerifiedThenPay(calculateTotalPrice());
             } catch (error) {
               setSubmitButtonLoading(false);
