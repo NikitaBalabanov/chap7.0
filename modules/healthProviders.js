@@ -171,6 +171,7 @@ function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
     disclaimer.dataset.defaultText = (disclaimer.textContent || "").trim();
   }
   disclaimer.style.visibility = "visible";
+  disclaimer.style.marginBottom = "18px";
   if (isPartner) {
     const [firstParagraph, secondParagraph] = PARTNER_DISCLAIMER_TEXT(partnerName);
     disclaimer.style.display = "";
