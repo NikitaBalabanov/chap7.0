@@ -16,7 +16,7 @@ const KVNR_INVALID_ERROR_TEXT = "Ungültiges Format der Versichertennummer";
 const OTHER_DISCLAIMER_TEXT =
   "Leider hat deine Krankenversicherung keine Partnerschaft mit uns. Setz dich mit deiner Krankenkasse in Verbindung, um ihre Erstattungsrichtlinien zu verstehen.";
 const PARTNER_DISCLAIMER_TEXT = (partnerName) => [
-  `Dank unserer Partnerschaft mit der ${partnerName ? ` (${partnerName})` : ""} kannst du deinen kostenlosen Zugang zu den Preneo-Programmen mit deiner Versichertennummer freischalten. Zu Abrechnungszwecken wird Preneo deine Versichertennummer einmalig zur Überprüfung an deine Krankenversicherung übermitteln. Zur Bestätigung des Leistungsanspruchs wird die Krankenversicherung den Status deiner Versicherung an Preneo zurückmelden.`,
+  `Dank unserer Partnerschaft mit der ${partnerName ? ` ${partnerName}` : ""} kannst du deinen kostenlosen Zugang zu den Preneo-Programmen mit deiner Versichertennummer freischalten. Zu Abrechnungszwecken wird Preneo deine Versichertennummer einmalig zur Überprüfung an deine Krankenversicherung übermitteln. Zur Bestätigung des Leistungsanspruchs wird die Krankenversicherung den Status deiner Versicherung an Preneo zurückmelden.`,
   "Zu Abrechnungszwecken wird Preneo meine Versichertennummer einmalig zur Überprüfung an meine Krankenversicherung übermitteln. Zur Bestätigung des Leistungsanspruchs wird die Krankenversicherung den Status meiner Versicherung an Preneo zurückmelden.",
 ];
 
@@ -178,6 +178,12 @@ function getHealthInsuranceNumberElements() {
 
 function setHealthInsuranceNumberErrorState(input, errorEl, hasError) {
   if (!input || !errorEl) return;
+  const step1ErrorEl = document.querySelector("#error_message_step1");
+  if (step1ErrorEl) {
+    step1ErrorEl.style.display = "none";
+    step1ErrorEl.innerHTML = "";
+  }
+
   if (hasError) {
     input.classList.add("error");
     errorEl.style.display = "block";
