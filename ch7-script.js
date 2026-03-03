@@ -241,7 +241,6 @@ document.addEventListener("DOMContentLoaded", function () {
               : true;
           if (!isHealthInsuranceNumberValid) {
             valid = false;
-            errorMessages.push(dictionary["error.healthInsuranceNumberFormat"]);
           }
           break;
         }
@@ -439,8 +438,12 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!valid) {
         switch (currentStep) {
           case 0:
-            errorMessageStep1.innerHTML = errorMessages.join("<br>");
-            errorMessageStep1.style.display = "block";
+            if (errorMessages.length > 0) {
+              errorMessageStep1.innerHTML = errorMessages.join("<br>");
+              errorMessageStep1.style.display = "block";
+            } else {
+              errorMessageStep1.style.display = "none";
+            }
             break;
           case 1:
             errorMessageStep2.innerHTML = errorMessages.join("<br>");
