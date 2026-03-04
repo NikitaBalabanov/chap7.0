@@ -377,6 +377,15 @@ function updateSelectedProviderPartnerFlag(isProviderPartner) {
   return nextValue;
 }
 
+function getRegularProviderDisclaimerText(defaultText, providerTakeover) {
+  const baseText = String(defaultText || "").trim();
+  const takeover = String(providerTakeover || "").trim();
+  if (!baseText || !takeover) return baseText;
+
+  // Replace the first percentage placeholder (e.g. "100%") with provider takeover.
+  return baseText.replace(/\d+(?:[.,]\d+)?\s*%/, takeover);
+}
+
 function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
   if (!selectedProvider) {
     setToStorage("isSelectedProviderPartner", false);
@@ -428,7 +437,12 @@ function updateDisclaimer(disclaimer, selectedProvider, hpAll) {
     disclaimer.style.flexDirection = "";
     disclaimer.style.rowGap = "";
     disclaimer.style.whiteSpace = "";
-    disclaimer.textContent = disclaimer.dataset.defaultText || "";
+    const defaultText = disclaimer.dataset.defaultText || "";
+    const providerTakeover = hpAll?.[selectedProvider]?.takeover || "";
+    disclaimer.textContent = getRegularProviderDisclaimerText(
+      defaultText,
+      providerTakeover
+    );
   }
 }
 
